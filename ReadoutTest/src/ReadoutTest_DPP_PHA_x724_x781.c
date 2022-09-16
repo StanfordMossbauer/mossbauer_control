@@ -150,11 +150,13 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
     ret |= CAEN_DGTZ_SetDPP_VirtualProbe(handle, DIGITAL_TRACE_1, CAEN_DGTZ_DPP_DIGITALPROBE_Peaking);
 
 
-
-	/* here goess..... */
-    ret |= CAEN_DGTZ_WriteRegister(handle, 0x1080, 0x04310009);  // mode
-    ret |= CAEN_DGTZ_WriteRegister(handle, 0x10C8, 0x00000000);  // lower level discriminator
-    ret |= CAEN_DGTZ_WriteRegister(handle, 0x10CC, 0x00003FFF);  // upper level discriminator
+	/* Joey added..... 
+  	TODO: allow bitmask, take from
+	https://github.com/cjpl/caen-suite/blob/master/WaveDump/src/WaveDump.c
+ 	*/
+    ret |= CAEN_DGTZ_WriteRegister(handle, 0x1080, 0x14310009);  // mode (0x04310009 standard, 0x14310009 energy skim)
+    ret |= CAEN_DGTZ_WriteRegister(handle, 0x10C8, 0x000007D0);  // lower level discriminator (14b)
+    ret |= CAEN_DGTZ_WriteRegister(handle, 0x10CC, 0x00000BB8);  // upper level discriminator (14b)
 
     if (ret) {
         printf("Warning: errors found during the programming of the digitizer.\nSome settings may not be executed\n");
@@ -262,18 +264,19 @@ int main(int argc, char *argv[])
 		/****************************\
 		*      DPP parameters        *
 		\****************************/
+		/*TODO: this should go in a settings file...*/
 		for (ch = 0; ch < MaxNChannels; ch++) {
 			DPPParams[b].thr[ch] = 100000;   // Trigger Threshold (in LSB)
-			DPPParams[b].k[ch] = 3000;     // Trapezoid Rise Time (ns)
-			DPPParams[b].m[ch] = 1000;      // Trapezoid Flat Top  (ns)
-			DPPParams[b].M[ch] = 50000;      // Decay Time Constant (ns) HACK-FPEP the one expected from fitting algorithm?
+			DPPParams[b].k[ch] = 30;     // Trapezoid Rise Time (ns)
+			DPPParams[b].m[ch] = 3000;      // Trapezoid Flat Top  (ns)
+			DPPParams[b].M[ch] = 50;      // Decay Time Constant (ns) HACK-FPEP the one expected from fitting algorithm?
 			DPPParams[b].ftd[ch] = 800;    // Flat top delay (peaking time) (ns) 
-			DPPParams[b].a[ch] = 4;       // Trigger Filter smoothing factor (number of samples to average for RC-CR2 filter) Options: 1; 2; 4; 8; 16; 32
+			DPPParams[b].a[ch] = 1;       // Trigger Filter smoothing factor (number of samples to average for RC-CR2 filter) Options: 1; 2; 4; 8; 16; 32
 			DPPParams[b].b[ch] = 200;     // Input Signal Rise time (ns)
 			DPPParams[b].trgho[ch] = 1200;  // Trigger Hold Off
-			DPPParams[b].nsbl[ch] = 4;     //number of samples for baseline average calculation. Options: 1->16 samples; 2->64 samples; 3->256 samples; 4->1024 samples; 5->4096 samples; 6->16384 samples
-			DPPParams[b].nspk[ch] = 0;     //Peak mean (number of samples to average for trapezoid height calculation). Options: 0-> 1 sample; 1->4 samples; 2->16 samples; 3->64 samples
-			DPPParams[b].pkho[ch] = 2000;  //peak holdoff (ns)
+			DPPParams[b].nsbl[ch] = 1;     //number of samples for baseline average calculation. Options: 1->16 samples; 2->64 samples; 3->256 samples; 4->1024 samples; 5->4096 samples; 6->16384 samples
+			DPPParams[b].nspk[ch] = 1;     //Peak mean (number of samples to average for trapezoid height calculation). Options: 0-> 1 sample; 1->4 samples; 2->16 samples; 3->64 samples
+			DPPParams[b].pkho[ch] = 20;  //peak holdoff (ns)
 			DPPParams[b].blho[ch] = 500;   //Baseline holdoff (ns)
 			DPPParams[b].enf[ch] = 1.0; // Energy Normalization Factor
 			DPPParams[b].decimation[ch] = 0;  //decimation (the input signal samples are averaged within this number of samples): 0 ->disabled; 1->2 samples; 2->4 samples; 3->8 samples
