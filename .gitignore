@@ -2,3 +2,4 @@ ReadoutTest/build/
 ReadoutTest/bin/
 *.o
 *.txt
+*.swp
