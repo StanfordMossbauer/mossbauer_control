@@ -30,7 +30,7 @@ LIBS	=	-L..
 
 INCLUDEDIR =	-I./include
 
-OBJS	=	src/ReadoutTest_DPP_PHA_x724_x781.o src/keyb.o src/Functions.o 
+OBJS	=	src/ReadoutTest_DPP_PHA_x724_x781.o src/keyb.o src/Functions.o src/DPPConfig.o
 
 INCLUDES =	./include/*
 

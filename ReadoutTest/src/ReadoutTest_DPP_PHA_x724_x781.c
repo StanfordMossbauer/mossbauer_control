@@ -33,6 +33,9 @@
 you can find this file in the src directory */
 #include "Functions.h"
 
+// include config stuff
+#include "config.h"
+
 /* ###########################################################################
 *  Functions
 *  ########################################################################### */
@@ -151,7 +154,7 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
 
 
 	/* Set up energy skimming (Joey) */
-    ret |= WriteRegisterBitmask(handle, 0x1080, 0x14310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
+    ret |= WriteRegisterBitmask(handle, 0x1080, 0x04310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
     ret |= WriteRegisterBitmask(handle, 0x10C8, 0x7D0, 0xFFFFFFFF);  // lower level discriminator (14b)
     ret |= WriteRegisterBitmask(handle, 0x10CC, 0xBB8, 0xFFFFFFFF);  // upper level discriminator (14b)
 
@@ -168,6 +171,11 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
 /* ########################################################################### */
 int main(int argc, char *argv[])
 {
+	/* The config */
+    DPPConfig_t   DPPcfg;
+    char ConfigFileName[100];
+    FILE *f_ini;
+
     /* The following variable is the type returned from most of CAENDigitizer
     library functions and is used to check if there was an error in function
     execution. For example:
@@ -211,6 +219,23 @@ int main(int argc, char *argv[])
     uint32_t NumEvents[MaxNChannels];
     CAEN_DGTZ_BoardInfo_t           BoardInfo;
 
+    /* *************************************************************************************** */
+    /* Open and parse configuration file                                                       */
+    /* *************************************************************************************** */
+    if (argc > 1)
+        strcpy(ConfigFileName, argv[1]);
+    else
+        strcpy(ConfigFileName, DEFAULT_CONFIG_FILE);
+    printf("Opening Configuration File %s\n", ConfigFileName);
+    f_ini = fopen(ConfigFileName, "r");
+    if (f_ini == NULL ) {
+        printf("ERROR: config file not found!\n");
+        goto QuitProgram;
+    }
+    ParseConfigFile(f_ini, &DPPcfg);
+    fclose(f_ini);
+    /*********/
+
     memset(DoSaveWave, 0, MAXNB*MaxNChannels*sizeof(int));
     for (i = 0; i < MAXNBITS; i++)
         BitMask |= 1<<i; /* Create a bit mask based on number of bits of the board */
@@ -227,6 +252,7 @@ int main(int argc, char *argv[])
 		/****************************\
 		* Communication Parameters   *
 		\****************************/
+		// TODO: (Some of) this should come from config
 		// Direct USB connection
 		Params[b].LinkType = CAEN_DGTZ_USB;  // Link Type
 		Params[b].VMEBaseAddress = 0;  // For direct USB connection, VMEBaseAddress must be 0
