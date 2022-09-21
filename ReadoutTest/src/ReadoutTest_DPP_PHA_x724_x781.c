@@ -102,6 +102,7 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
     for(i=0; i<MaxNChannels; i++) {
         if (Params.ChannelMask & (1<<i)) {
             // Set a DC offset to the input signal to adapt it to digitizer's dynamic range
+            // TODO: add this to config
             ret |= CAEN_DGTZ_SetChannelDCOffset(handle, i, 0x8000);
             
             // Set the Pre-Trigger size (in samples)

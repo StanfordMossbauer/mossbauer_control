@@ -73,22 +73,10 @@ typedef struct {
     int Nch;
     int Nbit;
     float Ts;
-    int NumEvents;
     int RecordLength;
-    int PostTrigger;
-    int InterruptNumEvents;
-    int TestPattern;
     CAEN_DGTZ_PulsePolarity_t PulsePolarity;
-    int DesMode;
-    int TriggerEdge;
-    int FPIOtype;
-    CAEN_DGTZ_TriggerMode_t ExtTriggerMode;
     CAEN_DGTZ_DPP_AcqMode_t AcqMode;
-    uint16_t EnableMask;
-    char GnuPlotPath[1000];
-    CAEN_DGTZ_TriggerMode_t ChannelTriggerMode[MAX_SET];
-    uint32_t DCoffset[MAX_SET];
-    int32_t  DCoffsetGrpCh[MAX_SET][MAX_SET];
+
     uint32_t Threshold[MAX_SET];
     uint32_t TrapRiseTime[MAX_SET];
     uint32_t TrapFlatTop[MAX_SET];
@@ -106,22 +94,10 @@ typedef struct {
     uint32_t Decimation[MAX_SET];
 
 	uint8_t GroupTrgEnableMask;
-    uint32_t MaxGroupNumber;
-	
-	uint32_t FTDCoffset[MAX_SET];
-	uint32_t FTThreshold[MAX_SET];
-	CAEN_DGTZ_TriggerMode_t	FastTriggerMode;
-	uint32_t	 FastTriggerEnabled;
     int GWn;
     uint32_t GWaddr[MAX_GW];
     uint32_t GWdata[MAX_GW];
 	uint32_t GWmask[MAX_GW];
-	OUTFILE_FLAGS OutFileFlags;
-	int DecimationFactor;
-    int useCorrections;
-    int UseManualTables;
-    char TablesFilenames[MAX_X742_GROUP_SIZE][1000];
-    CAEN_DGTZ_DRS4Frequency_t DRS4Frequency;
 } DPPConfig_t;
 
 
