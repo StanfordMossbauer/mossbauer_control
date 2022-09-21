@@ -17,15 +17,17 @@
 */
 static void SetDefaultConfiguration(DPPConfig_t *DPPcfg) {
     int i, j;
-
+    /* TODO: need default values for new params */
     DPPcfg->RecordLength = (1024*16);
 	DPPcfg->PostTrigger = 80;
 	DPPcfg->NumEvents = 1023;
 	DPPcfg->EnableMask = 0xFFFF;
 	DPPcfg->GWn = 0;
     DPPcfg->ExtTriggerMode = CAEN_DGTZ_TRGMODE_ACQ_ONLY;
+    DPPcfg->AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope;
     DPPcfg->InterruptNumEvents = 0;
     DPPcfg->TestPattern = 0;
+    DPPcfg->PulsePolarity = CAEN_DGTZ_PulsePolarityPositive;
 	DPPcfg->DecimationFactor = 1;
     DPPcfg->TriggerEdge = 0;
     DPPcfg->DesMode = 0;
@@ -37,7 +39,6 @@ static void SetDefaultConfiguration(DPPConfig_t *DPPcfg) {
 		DPPcfg->DCoffset[i] = 0;
 		DPPcfg->Threshold[i] = 0;
         DPPcfg->ChannelTriggerMode[i] = CAEN_DGTZ_TRGMODE_DISABLED;
-		DPPcfg->GroupTrgEnableMask[i] = 0;
 		for(j=0; j<MAX_SET; j++) DPPcfg->DCoffsetGrpCh[i][j] = -1;
 		DPPcfg->FTThreshold[i] = 0;
 		DPPcfg->FTDCoffset[i] =0;
@@ -232,6 +233,32 @@ int ParseConfigFile(FILE *f_ini, DPPConfig_t *DPPcfg)
 			continue;
 		}
 
+
+        /****Joey added****/
+        // Pulse Polarity
+		if (strstr(str, "PULSE_POLARITY")!=NULL) {
+			read = fscanf(f_ini, "%s", str1);
+			if (strcmp(str1, "NEGATIVE")==0)
+				DPPcfg->PulsePolarity = CAEN_DGTZ_PulsePolarityNegative;
+			else if (strcmp(str1, "POSITIVE")!=0)
+				printf("%s: invalid option\n", str);
+			continue;
+		}
+
+        // Acquisition Mode (OSCILLOSCOPE, LIST, MIXED)
+		if (strstr(str, "ACQUISITION_MODE")!=NULL) {
+			read = fscanf(f_ini, "%s", str1);
+			if (strcmp(str1, "OSCILLOSCOPE")==0)
+                DPPcfg->AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope;
+			else if (strcmp(str1, "LIST")==0)
+                DPPcfg->AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_List;
+			else if (strcmp(str1, "MIXED")==0)
+                DPPcfg->AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_Mixed;
+            else
+                printf("%s: Invalid Parameter\n", str);
+            continue;
+		}
+
 		// Acquisition Record Length (number of samples)
 		if (strstr(str, "DECIMATION_FACTOR")!=NULL) {
 			read = fscanf(f_ini, "%d", &DPPcfg->DecimationFactor);
@@ -385,14 +412,167 @@ int ParseConfigFile(FILE *f_ini, DPPConfig_t *DPPcfg)
 			continue;
 		}
 
+        ////////////////////
+        /* DPP Parameters */
+        ////////////////////
+		// Trap rise time
+		if (strstr(str, "TRAPEZOID_RISE_TIME")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->TrapRiseTime[i] = val;
+            else
+                DPPcfg->TrapRiseTime[ch] = val;
+			continue;
+		}
+
+		// Trap flat top
+		if (strstr(str, "TRAPEZOID_FLAT_TOP")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->TrapFlatTop[i] = val;
+            else
+                DPPcfg->TrapFlatTop[ch] = val;
+			continue;
+		}
+
+		// Decay time constant
+		if (strstr(str, "DECAY_TIME_CONSTANT")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->DecayTimeConstant[i] = val;
+            else
+                DPPcfg->DecayTimeConstant[ch] = val;
+			continue;
+		}
+
+
+		// Peaking time
+		if (strstr(str, "PEAKING_TIME")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->PeakingTime[i] = val;
+            else
+                DPPcfg->PeakingTime[ch] = val;
+			continue;
+		}
+
+		// Trigger filter smoothing factor
+		if (strstr(str, "TRIGGER_SMOOTHING_FACTOR")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->TriggerSmoothingFactor[i] = val;
+            else
+                DPPcfg->TriggerSmoothingFactor[ch] = val;
+			continue;
+		}
+
+		// Signal rise time
+		if (strstr(str, "SIGNAL_RISE_TIME")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->SignalRiseTime[i] = val;
+            else
+                DPPcfg->SignalRiseTime[ch] = val;
+			continue;
+		}
+
+		if (strstr(str, "TRIGGER_HOLDOFF")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->TriggerHoldoff[i] = val;
+            else
+                DPPcfg->TriggerHoldoff[ch] = val;
+			continue;
+		}
+
+        // number of samples for baseline average calculation. Options: 1->16 samples; 2->64 samples; 3->256 samples; 4->1024 samples; 5->4096 samples; 6->16384 samples
+		if (strstr(str, "BASELINE_SAMPLES")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->BaselineSamples[i] = val;
+            else
+                DPPcfg->BaselineSamples[ch] = val;
+			continue;
+		}
+
+		if (strstr(str, "TRAPEZOID_SMOOTHING")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->TrapSmoothing[i] = val;
+            else
+                DPPcfg->TrapSmoothing[ch] = val;
+			continue;
+		}
+
+		if (strstr(str, "PEAK_HOLDOFF")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->PeakHoldoff[i] = val;
+            else
+                DPPcfg->PeakHoldoff[ch] = val;
+			continue;
+		}
+
+
+		if (strstr(str, "BASELINE_HOLDOFF")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->BaselineHoldoff[i] = val;
+            else
+                DPPcfg->BaselineHoldoff[ch] = val;
+			continue;
+		}
+
+		if (strstr(str, "ENERGY_NORMALIZATION")!=NULL) {
+			read = fscanf(f_ini, "%f", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->EnergyNormalization[i] = val;
+            else
+                DPPcfg->EnergyNormalization[ch] = val;
+			continue;
+		}
+
+		if (strstr(str, "DECIMATION")!=NULL) {
+			read = fscanf(f_ini, "%d", &val);
+			if (tr != -1) continue;
+            if (ch == -1)
+                for(i=0; i<MAX_SET; i++)
+                    DPPcfg->Decimation[i] = val;
+            else
+                DPPcfg->Decimation[ch] = val;
+			continue;
+		}
+        /////////////////////////////////////
+
+
 		// Group Trigger Enable Mask (hex 8 bit)
 		if (strstr(str, "GROUP_TRG_ENABLE_MASK")!=NULL) {
 			read = fscanf(f_ini, "%x", &val);
-            if (ch == -1)
-                for(i=0; i<MAX_SET; i++)
-                    DPPcfg->GroupTrgEnableMask[i] = val & 0xFF;
-            else
-                 DPPcfg->GroupTrgEnableMask[ch] = val & 0xFF;
+            DPPcfg->GroupTrgEnableMask = val & 0xFF;
 			continue;
 		}
 
@@ -425,27 +605,6 @@ int ParseConfigFile(FILE *f_ini, DPPConfig_t *DPPcfg)
 				DPPcfg->FPIOtype = 1;
 			else if (strcmp(str1, "NIM")!=0)
 				printf("%s: invalid option\n", str);
-			continue;
-		}
-
-        // Channel Enable (or Group enable for the V1740) (YES/NO)
-        if (strstr(str, "ENABLE_INPUT")!=NULL) {
-			read = fscanf(f_ini, "%s", str1);
-            if (strcmp(str1, "YES")==0) {
-                if (ch == -1)
-                    DPPcfg->EnableMask = 0xFF;
-                else
-                    DPPcfg->EnableMask |= (1 << ch);
-			    continue;
-            } else if (strcmp(str1, "NO")==0) {
-                if (ch == -1)
-                    DPPcfg->EnableMask = 0x00;
-                else
-                    DPPcfg->EnableMask &= ~(1 << ch);
-			    continue;
-            } else {
-                printf("%s: invalid option\n", str);
-            }
 			continue;
 		}
 

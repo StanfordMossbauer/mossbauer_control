@@ -278,31 +278,33 @@ int main(int argc, char *argv[])
 		/****************************\
 		*  Acquisition parameters    *
 		\****************************/
-		Params[b].AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_Mixed;          // CAEN_DGTZ_DPP_ACQ_MODE_List or CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope
-		Params[b].RecordLength = 5000;                              // Num of samples of the waveforms: Ns = RecordLength*2 (only for Oscilloscope mode)
-		Params[b].ChannelMask = 0x1;                               // Channel enable mask
+		//Params[b].AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_Mixed;          // CAEN_DGTZ_DPP_ACQ_MODE_List or CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope
+		Params[b].AcqMode = DPPcfg.AcqMode;          // CAEN_DGTZ_DPP_ACQ_MODE_List or CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope
+		Params[b].RecordLength = DPPcfg.RecordLength;                              // Num of samples of the waveforms: Ns = RecordLength*2 (only for Oscilloscope mode)
+		//Params[b].ChannelMask = 0x1;                               // Channel enable mask
+		Params[b].ChannelMask = DPPcfg.GroupTrgEnableMask;                               // Channel enable mask
 		Params[b].EventAggr = 0;                                   // number of events in one aggregate (0=automatic)
-		Params[b].PulsePolarity = CAEN_DGTZ_PulsePolarityNegative; // Pulse Polarity (this parameter can be individual)
+        Params[b].PulsePolarity = DPPcfg.PulsePolarity; // Pulse Polarity (this parameter can be individual)
 
 		/****************************\
 		*      DPP parameters        *
 		\****************************/
 		/*TODO: this should go in a settings file...*/
 		for (ch = 0; ch < MaxNChannels; ch++) {
-			DPPParams[b].thr[ch] = 100000;   // Trigger Threshold (in LSB)
-			DPPParams[b].k[ch] = 30;     // Trapezoid Rise Time (ns)
-			DPPParams[b].m[ch] = 3000;      // Trapezoid Flat Top  (ns)
-			DPPParams[b].M[ch] = 50;      // Decay Time Constant (ns) HACK-FPEP the one expected from fitting algorithm?
-			DPPParams[b].ftd[ch] = 800;    // Flat top delay (peaking time) (ns) 
-			DPPParams[b].a[ch] = 1;       // Trigger Filter smoothing factor (number of samples to average for RC-CR2 filter) Options: 1; 2; 4; 8; 16; 32
-			DPPParams[b].b[ch] = 200;     // Input Signal Rise time (ns)
-			DPPParams[b].trgho[ch] = 1200;  // Trigger Hold Off
-			DPPParams[b].nsbl[ch] = 1;     //number of samples for baseline average calculation. Options: 1->16 samples; 2->64 samples; 3->256 samples; 4->1024 samples; 5->4096 samples; 6->16384 samples
-			DPPParams[b].nspk[ch] = 1;     //Peak mean (number of samples to average for trapezoid height calculation). Options: 0-> 1 sample; 1->4 samples; 2->16 samples; 3->64 samples
-			DPPParams[b].pkho[ch] = 20;  //peak holdoff (ns)
-			DPPParams[b].blho[ch] = 500;   //Baseline holdoff (ns)
-			DPPParams[b].enf[ch] = 1.0; // Energy Normalization Factor
-			DPPParams[b].decimation[ch] = 0;  //decimation (the input signal samples are averaged within this number of samples): 0 ->disabled; 1->2 samples; 2->4 samples; 3->8 samples
+			DPPParams[b].thr[ch] = DPPcfg.Threshold[ch];   // Trigger Threshold (in LSB)
+			DPPParams[b].k[ch] = DPPcfg.TrapRiseTime[ch];     // Trapezoid Rise Time (ns)
+			DPPParams[b].m[ch] = DPPcfg.TrapFlatTop[ch];      // Trapezoid Flat Top  (ns)
+			DPPParams[b].M[ch] = DPPcfg.DecayTimeConstant[ch];      // Decay Time Constant (ns) HACK-FPEP the one expected from fitting algorithm?
+			DPPParams[b].ftd[ch] = DPPcfg.PeakingTime[ch];    // Flat top delay (peaking time) (ns) 
+			DPPParams[b].a[ch] = DPPcfg.TriggerSmoothingFactor[ch];       // Trigger Filter smoothing factor (number of samples to average for RC-CR2 filter) Options: 1; 2; 4; 8; 16; 32
+			DPPParams[b].b[ch] = DPPcfg.SignalRiseTime[ch];     // Input Signal Rise time (ns)
+			DPPParams[b].trgho[ch] = DPPcfg.TriggerHoldoff[ch];  // Trigger Hold Off
+			DPPParams[b].nsbl[ch] = DPPcfg.BaselineSamples[ch];     //number of samples for baseline average calculation. Options: 1->16 samples; 2->64 samples; 3->256 samples; 4->1024 samples; 5->4096 samples; 6->16384 samples
+			DPPParams[b].nspk[ch] = DPPcfg.TrapSmoothing[ch];     //Peak mean (number of samples to average for trapezoid height calculation). Options: 0-> 1 sample; 1->4 samples; 2->16 samples; 3->64 samples
+			DPPParams[b].pkho[ch] = DPPcfg.PeakHoldoff[ch];  //peak holdoff (ns)
+			DPPParams[b].blho[ch] = DPPcfg.BaselineHoldoff[ch];   //Baseline holdoff (ns)
+			DPPParams[b].enf[ch] = DPPcfg.EnergyNormalization[ch]; // Energy Normalization Factor
+			DPPParams[b].decimation[ch] = DPPcfg.Decimation[ch];  //decimation (the input signal samples are averaged within this number of samples): 0 ->disabled; 1->2 samples; 2->4 samples; 3->8 samples
 			DPPParams[b].dgain[ch] = 0;    //decimation gain. Options: 0->DigitalGain=1; 1->DigitalGain=2 (only with decimation >= 2samples); 2->DigitalGain=4 (only with decimation >= 4samples); 3->DigitalGain=8( only with decimation = 8samples).
 			DPPParams[b].otrej[ch] = 0;
 			DPPParams[b].trgwin[ch] = 0;  //Enable Rise time Discrimination. Options: 0->disabled; 1->enabled

@@ -78,17 +78,34 @@ typedef struct {
     int PostTrigger;
     int InterruptNumEvents;
     int TestPattern;
+    CAEN_DGTZ_PulsePolarity_t PulsePolarity;
     int DesMode;
     int TriggerEdge;
     int FPIOtype;
     CAEN_DGTZ_TriggerMode_t ExtTriggerMode;
+    CAEN_DGTZ_DPP_AcqMode_t AcqMode;
     uint16_t EnableMask;
     char GnuPlotPath[1000];
     CAEN_DGTZ_TriggerMode_t ChannelTriggerMode[MAX_SET];
     uint32_t DCoffset[MAX_SET];
     int32_t  DCoffsetGrpCh[MAX_SET][MAX_SET];
     uint32_t Threshold[MAX_SET];
-	uint8_t GroupTrgEnableMask[MAX_SET];
+    uint32_t TrapRiseTime[MAX_SET];
+    uint32_t TrapFlatTop[MAX_SET];
+    uint32_t DecayTimeConstant[MAX_SET];
+    uint32_t PeakingTime[MAX_SET];
+    uint32_t TriggerSmoothingFactor[MAX_SET];
+    uint32_t SignalRiseTime[MAX_SET];
+    uint32_t TriggerHoldoff[MAX_SET];
+
+    uint32_t BaselineSamples[MAX_SET];
+    uint32_t TrapSmoothing[MAX_SET];
+    uint32_t PeakHoldoff[MAX_SET];
+    uint32_t BaselineHoldoff[MAX_SET];
+    float EnergyNormalization[MAX_SET];
+    uint32_t Decimation[MAX_SET];
+
+	uint8_t GroupTrgEnableMask;
     uint32_t MaxGroupNumber;
 	
 	uint32_t FTDCoffset[MAX_SET];
