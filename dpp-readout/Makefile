@@ -11,8 +11,8 @@
 #########################################################################
 ARCH	=	`uname -m`
 
-OUTDIR  =    	./bin/
-OUTNAME =    	ReadoutTest.bin
+OUTDIR  =    	/home/joeyh/software/anaconda3/envs/mossbauer/bin/
+OUTNAME =    	dpp-readout
 OUT     =    	$(OUTDIR)/$(OUTNAME)
 
 CC	=	gcc
@@ -30,7 +30,7 @@ LIBS	=	-L..
 
 INCLUDEDIR =	-I./include
 
-OBJS	=	src/ReadoutTest_DPP_PHA_x724_x781.o src/keyb.o src/Functions.o src/DPPConfig.o
+OBJS	=	src/DPPReadout.o src/keyb.o src/Functions.o src/DPPConfig.o
 
 INCLUDES =	./include/*
 
