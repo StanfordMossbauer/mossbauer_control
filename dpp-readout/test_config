@@ -12,7 +12,7 @@ GROUP_TRG_ENABLE_MASK 0x1
 ##################
 
 # channel-specific settings (now setting globally...)
-TRIGGER_THRESHOLD 100000  # LSB
+TRIGGER_THRESHOLD 28  # LSB
 
 
 # not yet done

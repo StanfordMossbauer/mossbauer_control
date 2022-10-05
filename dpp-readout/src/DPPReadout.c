@@ -155,9 +155,9 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
 
 
 	/* Set up energy skimming (Joey) */
-    ret |= WriteRegisterBitmask(handle, 0x1080, 0x04310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
-    ret |= WriteRegisterBitmask(handle, 0x10C8, 0x7D0, 0xFFFFFFFF);  // lower level discriminator (14b)
-    ret |= WriteRegisterBitmask(handle, 0x10CC, 0xBB8, 0xFFFFFFFF);  // upper level discriminator (14b)
+    //ret |= WriteRegisterBitmask(handle, 0x1080, 0x04310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
+    //ret |= WriteRegisterBitmask(handle, 0x10C8, 0x7D0, 0xFFFFFFFF);  // lower level discriminator (14b)
+    //ret |= WriteRegisterBitmask(handle, 0x10CC, 0xBB8, 0xFFFFFFFF);  // upper level discriminator (14b)
 
     if (ret) {
         printf("Warning: errors found during the programming of the digitizer.\nSome settings may not be executed\n");

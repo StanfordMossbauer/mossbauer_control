@@ -27,7 +27,7 @@
 #define		_PACKED_		__attribute__ ((packed, aligned(1)))
 #define		_INLINE_		__inline__ 
 
-#define DEFAULT_CONFIG_FILE  "/etc/wavedump/WaveDumpConfig.txt"
+#define DEFAULT_CONFIG_FILE  "/etc/wavedump/default_config"
 #define GNUPLOT_DEFAULT_PATH ""
 
 

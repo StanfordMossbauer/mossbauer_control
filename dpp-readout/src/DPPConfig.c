@@ -299,13 +299,14 @@ int ParseConfigFile(FILE *f_ini, DPPConfig_t *DPPcfg)
 		}
 
 		if (strstr(str, "ENERGY_NORMALIZATION")!=NULL) {
-			read = fscanf(f_ini, "%f", &val);
+            float enorm;
+			read = fscanf(f_ini, "%f", &enorm);
 			if (tr != -1) continue;
             if (ch == -1)
                 for(i=0; i<MAX_SET; i++)
-                    DPPcfg->EnergyNormalization[i] = val;
+                    DPPcfg->EnergyNormalization[i] = enorm;
             else
-                DPPcfg->EnergyNormalization[ch] = val;
+                DPPcfg->EnergyNormalization[ch] = enorm;
 			continue;
 		}
 

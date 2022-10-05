@@ -16,6 +16,7 @@
 
 #include "keyb.h"
 #include "Functions.h"
+#include <CAENDigitizer.h>
 
 #include <stdio.h>
 #ifdef WIN32
