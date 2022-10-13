@@ -103,10 +103,10 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
         if (Params.ChannelMask & (1<<i)) {
             // Set a DC offset to the input signal to adapt it to digitizer's dynamic range
             // TODO: add this to config
-            ret |= CAEN_DGTZ_SetChannelDCOffset(handle, i, 0x8000);
+            ret |= CAEN_DGTZ_SetChannelDCOffset(handle, i, 0x2100);
             
             // Set the Pre-Trigger size (in samples)
-            ret |= CAEN_DGTZ_SetDPPPreTriggerSize(handle, i, 2000);
+            ret |= CAEN_DGTZ_SetDPPPreTriggerSize(handle, i, 1000);
             
             // Set the polarity for the given channel (CAEN_DGTZ_PulsePolarityPositive or CAEN_DGTZ_PulsePolarityNegative)
             ret |= CAEN_DGTZ_SetChannelPulsePolarity(handle, i, Params.PulsePolarity);
@@ -149,15 +149,29 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
 	CAEN_DGTZ_DPP_DIGITALPROBE_BFMVeto
 	CAEN_DGTZ_DPP_DIGITALPROBE_ExtTRG*/
 
+    // Trapezoid settings
     ret |= CAEN_DGTZ_SetDPP_VirtualProbe(handle, ANALOG_TRACE_1, CAEN_DGTZ_DPP_VIRTUALPROBE_Input);
     ret |= CAEN_DGTZ_SetDPP_VirtualProbe(handle, ANALOG_TRACE_2, CAEN_DGTZ_DPP_VIRTUALPROBE_TrapezoidReduced);
     ret |= CAEN_DGTZ_SetDPP_VirtualProbe(handle, DIGITAL_TRACE_1, CAEN_DGTZ_DPP_DIGITALPROBE_Peaking);
 
+    // Discrimination settings
+    //ret |= CAEN_DGTZ_SetDPP_VirtualProbe(handle, ANALOG_TRACE_1, CAEN_DGTZ_DPP_VIRTUALPROBE_Delta2);
+    //ret |= CAEN_DGTZ_SetDPP_VirtualProbe(handle, ANALOG_TRACE_2, CAEN_DGTZ_DPP_VIRTUALPROBE_Input);
+    //ret |= CAEN_DGTZ_SetDPP_VirtualProbe(handle, DIGITAL_TRACE_1, CAEN_DGTZ_DPP_DIGITALPROBE_Peaking);
+
 
 	/* Set up energy skimming (Joey) */
-    //ret |= WriteRegisterBitmask(handle, 0x1080, 0x04310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
-    //ret |= WriteRegisterBitmask(handle, 0x10C8, 0x7D0, 0xFFFFFFFF);  // lower level discriminator (14b)
-    //ret |= WriteRegisterBitmask(handle, 0x10CC, 0xBB8, 0xFFFFFFFF);  // upper level discriminator (14b)
+    ret |= WriteRegisterBitmask(handle, 0x1080, 0x04310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
+    //ret |= WriteRegisterBitmask(handle, 0x10C8, 0x190, 0xFFFFFFFF);  // lower level discriminator (14b)
+    //ret |= WriteRegisterBitmask(handle, 0x10CC, 0x1F4, 0xFFFFFFFF);  // upper level discriminator (14b)
+
+    /* execute generic write commands */
+    for(i=0; i<Params.GWn; i++) {
+        ret |= WriteRegisterBitmask(handle, Params.GWaddr[i], Params.GWdata[i], Params.GWmask[i]);
+        printf("Wrote to register: 0x%08X\n", Params.GWaddr[i] & 0xFFFFFFFF);
+        printf("Data: 0x%08X\n", Params.GWdata[i] & 0xFFFFFFFF);
+        printf("Mask: 0x%08X\n\n", Params.GWmask[i] & 0xFFFFFFFF);
+    }
 
     if (ret) {
         printf("Warning: errors found during the programming of the digitizer.\nSome settings may not be executed\n");
@@ -208,7 +222,7 @@ int main(int argc, char *argv[])
     int handle[MAXNB];
 
     /* Other variables */
-    int i, b, ch, ev;
+    int i, b, ch, ev, write_n;
     int Quit=0;
     int AcqRun = 0;
     uint32_t AllocatedSize, BufferSize;
@@ -286,6 +300,15 @@ int main(int argc, char *argv[])
 		Params[b].ChannelMask = DPPcfg.GroupTrgEnableMask;                               // Channel enable mask
 		Params[b].EventAggr = 0;                                   // number of events in one aggregate (0=automatic)
         Params[b].PulsePolarity = DPPcfg.PulsePolarity; // Pulse Polarity (this parameter can be individual)
+        printf("hi");
+        printf("%d", DPPcfg.GWn);
+        Params[b].GWn = DPPcfg.GWn;
+		for (write_n = 0; write_n < Params[b].GWn; write_n++) {
+            printf("hi");
+            Params[b].GWaddr[write_n] = DPPcfg.GWaddr[write_n];
+            Params[b].GWdata[write_n] = DPPcfg.GWdata[write_n];
+            Params[b].GWmask[write_n] = DPPcfg.GWmask[write_n];
+        }
 
 		/****************************\
 		*      DPP parameters        *
