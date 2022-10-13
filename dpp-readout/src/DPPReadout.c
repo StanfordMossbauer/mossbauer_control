@@ -161,9 +161,9 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
 
 
 	/* Set up energy skimming (Joey) */
-    ret |= WriteRegisterBitmask(handle, 0x1080, 0x04310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
-    //ret |= WriteRegisterBitmask(handle, 0x10C8, 0x190, 0xFFFFFFFF);  // lower level discriminator (14b)
-    //ret |= WriteRegisterBitmask(handle, 0x10CC, 0x1F4, 0xFFFFFFFF);  // upper level discriminator (14b)
+    ret |= WriteRegisterBitmask(handle, 0x1080, 0x14310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
+    ret |= WriteRegisterBitmask(handle, 0x10C8, 0x190, 0xFFFFFFFF);  // lower level discriminator (14b)
+    ret |= WriteRegisterBitmask(handle, 0x10CC, 0x1F4, 0xFFFFFFFF);  // upper level discriminator (14b)
 
     /* execute generic write commands */
     for(i=0; i<Params.GWn; i++) {
