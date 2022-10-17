@@ -6,6 +6,7 @@ ACQUISITION_MODE MIXED
 RECORD_LENGTH  5000
 PULSE_POLARITY NEGATIVE
 GROUP_TRG_ENABLE_MASK 0x1
+DC_OFFSET 0x2100
 
 ##################
 # DPP Parameters #
@@ -32,3 +33,11 @@ BASELINE_SAMPLES 3     # number of samples for baseline average calculation. Opt
 BASELINE_HOLDOFF 500   # Baseline holdoff (ns)
 ENERGY_NORMALIZATION 1.0 #  Energy Normalization Factor
 DECIMATION 0  # decimation (the input signal samples are averaged within this number of samples): 0 ->disabled 1->2 samples 2->4 samples 3->8 samples).
+
+
+###############
+# Free Writes #
+###############
+#WRITE_REGISTER 0x1080 0x1431009 0xFFFFFFFF
+#WRITE_REGISTER 0x10C8 0x000 0xFFFFFFFF
+#WRITE_REGISTER 0x10CC 0x3E8 0xFFFFFFFF

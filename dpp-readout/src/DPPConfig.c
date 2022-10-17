@@ -331,6 +331,14 @@ int ParseConfigFile(FILE *f_ini, DPPConfig_t *DPPcfg)
 		}
 
 
+		// DC Offset (hex 16 bit)
+		if (strstr(str, "DC_OFFSET")!=NULL) {
+			read = fscanf(f_ini, "%x", &val);
+            DPPcfg->DCOffset = val & 0xFFFF;
+			continue;
+		}
+
+
         printf("%s: invalid setting\n", str);
 	}
 	return ret;

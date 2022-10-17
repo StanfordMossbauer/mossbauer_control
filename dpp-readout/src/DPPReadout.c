@@ -102,8 +102,7 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
     for(i=0; i<MaxNChannels; i++) {
         if (Params.ChannelMask & (1<<i)) {
             // Set a DC offset to the input signal to adapt it to digitizer's dynamic range
-            // TODO: add this to config
-            ret |= CAEN_DGTZ_SetChannelDCOffset(handle, i, 0x2100);
+            ret |= CAEN_DGTZ_SetChannelDCOffset(handle, i, Params.DCOffset);
             
             // Set the Pre-Trigger size (in samples)
             ret |= CAEN_DGTZ_SetDPPPreTriggerSize(handle, i, 1000);
@@ -161,9 +160,9 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
 
 
 	/* Set up energy skimming (Joey) */
-    ret |= WriteRegisterBitmask(handle, 0x1080, 0x14310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
-    ret |= WriteRegisterBitmask(handle, 0x10C8, 0x190, 0xFFFFFFFF);  // lower level discriminator (14b)
-    ret |= WriteRegisterBitmask(handle, 0x10CC, 0x1F4, 0xFFFFFFFF);  // upper level discriminator (14b)
+    //ret |= WriteRegisterBitmask(handle, 0x1080, 0x04310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
+    //ret |= WriteRegisterBitmask(handle, 0x10C8, 0x7D0, 0xFFFFFFFF);  // lower level discriminator (14b)
+    //ret |= WriteRegisterBitmask(handle, 0x10CC, 0xBB8, 0xFFFFFFFF);  // upper level discriminator (14b)
 
     /* execute generic write commands */
     for(i=0; i<Params.GWn; i++) {
@@ -295,6 +294,7 @@ int main(int argc, char *argv[])
 		\****************************/
 		//Params[b].AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_Mixed;          // CAEN_DGTZ_DPP_ACQ_MODE_List or CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope
 		Params[b].AcqMode = DPPcfg.AcqMode;          // CAEN_DGTZ_DPP_ACQ_MODE_List or CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope
+        Params[b].DCOffset = DPPcfg.DCOffset;
 		Params[b].RecordLength = DPPcfg.RecordLength;                              // Num of samples of the waveforms: Ns = RecordLength*2 (only for Oscilloscope mode)
 		//Params[b].ChannelMask = 0x1;                               // Channel enable mask
 		Params[b].ChannelMask = DPPcfg.GroupTrgEnableMask;                               // Channel enable mask
