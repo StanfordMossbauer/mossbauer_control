@@ -16,6 +16,7 @@
 
 #ifndef READOUT_TEST_FUNCTIONS
 #define READOUT_TEST_FUNCTIONS
+#define MAX_GW  1000        /* max. number of generic write commads */
 
 #include "keyb.h"
 #include "CAENDigitizerType.h"
@@ -45,6 +46,12 @@ typedef struct
     CAEN_DGTZ_PulsePolarity_t PulsePolarity;
     CAEN_DGTZ_DPP_AcqMode_t AcqMode;
     CAEN_DGTZ_IOLevel_t IOlev;
+    uint16_t DCOffset;
+    int EnergySkim;
+    int GWn;
+    uint32_t GWaddr[MAX_GW];
+    uint32_t GWdata[MAX_GW];
+	uint32_t GWmask[MAX_GW];
 } DigitizerParams_t;
 
 

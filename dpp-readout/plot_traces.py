@@ -14,12 +14,16 @@ fn_map = {
 arr_map = {}
 fig2, ax2 = plt.subplots(2, 2)
 fig, ax = plt.subplots(1)
+ax3 = ax.twinx()
 for i, (key, val) in enumerate(fn_map.items()):
     with open(val) as f:
         arr_map[key] = np.array([int(v) for v in f.readlines()])
     ax2[int(i/2)][i % 2].plot(arr_map[key], label=key)
     ax2[int(i/2)][i % 2].set_title(key)
-    ax.plot(arr_map[key], label=key)
+    if i<2:
+        ax.plot(arr_map[key], label=key)
+    else:
+        ax3.plot(arr_map[key], label=key)
 plt.legend(loc='best')
 fig2.tight_layout()
 plt.show()

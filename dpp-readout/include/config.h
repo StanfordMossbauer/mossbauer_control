@@ -76,6 +76,7 @@ typedef struct {
     int RecordLength;
     CAEN_DGTZ_PulsePolarity_t PulsePolarity;
     CAEN_DGTZ_DPP_AcqMode_t AcqMode;
+    int EnergySkim;
     uint32_t Threshold[MAX_SET];
     uint32_t TrapRiseTime[MAX_SET];
     uint32_t TrapFlatTop[MAX_SET];
@@ -93,6 +94,7 @@ typedef struct {
     uint32_t Decimation[MAX_SET];
 
 	uint8_t GroupTrgEnableMask;
+	uint16_t DCOffset;
     int GWn;
     uint32_t GWaddr[MAX_GW];
     uint32_t GWdata[MAX_GW];

@@ -11,7 +11,7 @@
 #########################################################################
 ARCH	=	`uname -m`
 
-OUTDIR  =    	/home/joeyh/software/anaconda3/envs/mossbauer/bin/
+OUTDIR  =    	/usr/local/anaconda3/envs/joeyh/bin
 OUTNAME =    	dpp-readout
 OUT     =    	$(OUTDIR)/$(OUTNAME)
 
