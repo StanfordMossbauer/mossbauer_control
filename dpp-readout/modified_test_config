@@ -8,6 +8,8 @@ PULSE_POLARITY NEGATIVE
 GROUP_TRG_ENABLE_MASK 0x1
 DC_OFFSET 0x2100
 
+ENERGY_SKIM ON
+
 ##################
 # DPP Parameters #
 ##################
@@ -38,6 +40,5 @@ DECIMATION 0  # decimation (the input signal samples are averaged within this nu
 ###############
 # Free Writes #
 ###############
-#WRITE_REGISTER 0x1080 0x1431009 0xFFFFFFFF
-#WRITE_REGISTER 0x10C8 0x000 0xFFFFFFFF
-#WRITE_REGISTER 0x10CC 0x3E8 0xFFFFFFFF
+WRITE_REGISTER 0x10C8 0x00007D0 0xFFFFFFFF
+WRITE_REGISTER 0x10CC 0x0000BB8 0xFFFFFFFF

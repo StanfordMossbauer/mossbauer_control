@@ -159,10 +159,10 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
     //ret |= CAEN_DGTZ_SetDPP_VirtualProbe(handle, DIGITAL_TRACE_1, CAEN_DGTZ_DPP_DIGITALPROBE_Peaking);
 
 
-	/* Set up energy skimming (Joey) */
-    //ret |= WriteRegisterBitmask(handle, 0x1080, 0x04310009, 0xFFFFFFFF);  // mode (0x04310009 standard, 0x14310009 energy skim)
-    //ret |= WriteRegisterBitmask(handle, 0x10C8, 0x7D0, 0xFFFFFFFF);  // lower level discriminator (14b)
-    //ret |= WriteRegisterBitmask(handle, 0x10CC, 0xBB8, 0xFFFFFFFF);  // upper level discriminator (14b)
+    // mode (0x04310009 standard, 0x14310009 energy skim)
+    if (Params.EnergySkim) ret |= WriteRegisterBitmask(handle, 0x1080, 0x14310009, 0xFFFFFFFF);  
+    else ret |= WriteRegisterBitmask(handle, 0x1080, 0x04310009, 0xFFFFFFFF);
+
 
     /* execute generic write commands */
     for(i=0; i<Params.GWn; i++) {
@@ -295,6 +295,7 @@ int main(int argc, char *argv[])
 		//Params[b].AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_Mixed;          // CAEN_DGTZ_DPP_ACQ_MODE_List or CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope
 		Params[b].AcqMode = DPPcfg.AcqMode;          // CAEN_DGTZ_DPP_ACQ_MODE_List or CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope
         Params[b].DCOffset = DPPcfg.DCOffset;
+        Params[b].EnergySkim = DPPcfg.EnergySkim;
 		Params[b].RecordLength = DPPcfg.RecordLength;                              // Num of samples of the waveforms: Ns = RecordLength*2 (only for Oscilloscope mode)
 		//Params[b].ChannelMask = 0x1;                               // Channel enable mask
 		Params[b].ChannelMask = DPPcfg.GroupTrgEnableMask;                               // Channel enable mask
@@ -474,6 +475,13 @@ int main(int argc, char *argv[])
                 }
                 AcqRun = 0;
             }
+            if (c == 'n')
+                for (b = 0; b < MAXNB; b++)
+                    // Spit out total count
+                    for (ch = 0; ch < MaxNChannels; ch++)
+                        if (ECnt[b][ch] != 0) 
+                            //SaveHistogram("Histo", b, ch, EHisto[b][ch]);  // Save Histograms to file for each board
+                            CountHistogram(b, ch, EHisto[b][ch]);
         }
         if (!AcqRun) {
             Sleep(10);

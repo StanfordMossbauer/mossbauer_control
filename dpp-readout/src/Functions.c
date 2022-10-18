@@ -185,6 +185,30 @@ void PrintInterface() {
 	printf("w ) Save waveforms to file\n\n\n");
 }
 
+/* --------------------------------------------------------------------------------------------------------- */
+/*! \fn      CountHistograms(uint32_t EHisto[8][1<<MAXNBITS])
+*   \brief   Count Histograms to output files
+*   \return  0=success; -1=error */
+/* --------------------------------------------------------------------------------------------------------- */
+
+int CountHistogram(int b, int ch, uint32_t *EHisto)
+{
+	/*
+	* This function counts the bin contents of the histogram
+	*/
+    FILE *fh;
+    int i;
+    char filename[20];
+    int count;
+    count = 0;
+    for(i=0; i<(1<<12); i++) {
+		count += EHisto[i];
+	}
+    printf("Total Count: %d", count);
+
+    return 0;
+}
+
 
 /*! \fn      int WriteRegisterBitmask(int32_t handle, uint32_t address, uint32_t data, uint32_t mask)
 *   \brief   writes 'data' on register at 'address' using 'mask' as bitmask

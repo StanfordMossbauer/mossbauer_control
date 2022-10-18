@@ -20,6 +20,7 @@ static void SetDefaultConfiguration(DPPConfig_t *DPPcfg) {
     /* TODO: need default values for new params */
     DPPcfg->RecordLength = (1024*16);
 	DPPcfg->GWn = 0;
+    DPPcfg->EnergySkim = 0;
     DPPcfg->AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope;
     DPPcfg->PulsePolarity = CAEN_DGTZ_PulsePolarityPositive;
 }
@@ -118,6 +119,16 @@ int ParseConfigFile(FILE *f_ini, DPPConfig_t *DPPcfg)
 			read = fscanf(f_ini, "%x", (int *)&DPPcfg->GWdata[DPPcfg->GWn]);
             read = fscanf(f_ini, "%x", (int *)&DPPcfg->GWmask[DPPcfg->GWn]);
 			DPPcfg->GWn++;
+			continue;
+		}
+
+        // Energy skim binary
+		if (strstr(str, "ENERGY_SKIM")!=NULL) {
+			read = fscanf(f_ini, "%s", str1);
+			if (strcmp(str1, "ON")==0)
+				DPPcfg->EnergySkim = 1;
+			else if (strcmp(str1, "OFF")!=0)
+				printf("%s: invalid option\n", str);
 			continue;
 		}
 

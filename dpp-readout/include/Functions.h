@@ -47,6 +47,7 @@ typedef struct
     CAEN_DGTZ_DPP_AcqMode_t AcqMode;
     CAEN_DGTZ_IOLevel_t IOlev;
     uint16_t DCOffset;
+    int EnergySkim;
     int GWn;
     uint32_t GWaddr[MAX_GW];
     uint32_t GWdata[MAX_GW];
