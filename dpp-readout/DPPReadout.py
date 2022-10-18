@@ -97,4 +97,4 @@ if __name__=='__main__':
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
 
-    digi = DPPReadout(config_file, verbose=False)
+    digi = DPPReadout(config_file, verbose=verbose)
