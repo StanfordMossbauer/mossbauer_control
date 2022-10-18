@@ -445,6 +445,12 @@ int main(int argc, char *argv[])
                     for (ch = 0; ch < MaxNChannels; ch++)
                         if (ECnt[b][ch] != 0) 
                             SaveHistogram("Histo", b, ch, EHisto[b][ch]);  // Save Histograms to file for each board
+            if (c == 'n')
+                for (b = 0; b < MAXNB; b++)
+                    // Spit out total count
+                    for (ch = 0; ch < MaxNChannels; ch++)
+                        if (ECnt[b][ch] != 0) 
+                            CountHistogram(b, ch, EHisto[b][ch]);
             if (c == 'w')
                 for (b = 0; b < MAXNB; b++)
                     for (ch = 0; ch < MaxNChannels; ch++)
@@ -475,13 +481,6 @@ int main(int argc, char *argv[])
                 }
                 AcqRun = 0;
             }
-            if (c == 'n')
-                for (b = 0; b < MAXNB; b++)
-                    // Spit out total count
-                    for (ch = 0; ch < MaxNChannels; ch++)
-                        if (ECnt[b][ch] != 0) 
-                            //SaveHistogram("Histo", b, ch, EHisto[b][ch]);  // Save Histograms to file for each board
-                            CountHistogram(b, ch, EHisto[b][ch]);
         }
         if (!AcqRun) {
             Sleep(10);

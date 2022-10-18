@@ -4,12 +4,11 @@ import time
 from os.path import join
 import atexit
 
-import numpy as np
-
 key_map = {
     'stop': 'S',
     'start': 's',
     'quit': 'q',
+    'count': 'n',
 }
 
 class DPPReadout:
@@ -28,17 +27,21 @@ class DPPReadout:
     def close(self):
         """Stop current acquisition, quit the program, end the process
         """
-        print('Closing child process.')
-        self.send(key_map['stop'])
-        self.send(key_map['quit'])
-        self.process.terminate()
-        self.process.close()
+        if self.process.isalive():
+            print('Closing child process.')
+            self.send(key_map['stop'])
+            self.send(key_map['quit'])
+            self.process.terminate()
+            self.process.close()
+        else:
+            print('Child already closed, doing nothing.')
         return
 
     def checkalive(self):
         """Make sure we haven't closed the program
         """
         assert self.process.isalive(), 'Child process closed!'
+        return
 
     def expect(self, exp):
         """Expect a specified output string, close if not, print if asked
@@ -62,6 +65,24 @@ class DPPReadout:
             self.expect(expect_string)
         return
 
+    def timed_acquire(self, time_s):
+        """Acquire for fixed time
+        TODO: stream readout rate
+        """
+        self.send(key_map['start'], 'Readout Rate')
+        time.sleep(time_s)
+        self.send(key_map['stop'], 'Acquisition Stopped for Board 0')
+        self.update_count()
+        return
+
+    def update_count(self):
+        """Update the total count
+        """
+        self.send(key_map['count'], r'[0-9]+')
+        assert 'Total Count: ' in str(self.process.before), 'Count failure!'
+        self.count = int(self.process.after)
+        return
+
 
 if __name__=='__main__':
     verbose = True
@@ -76,4 +97,4 @@ if __name__=='__main__':
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
 
-    digi = DPPReadout(config_file, verbose=True)
+    digi = DPPReadout(config_file, verbose=False)

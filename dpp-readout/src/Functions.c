@@ -181,6 +181,7 @@ void PrintInterface() {
 	printf("r ) Restart acquisition\n");
 	printf("q ) Quit\n");
 	printf("t ) Send a software trigger\n");
+	printf("n ) Get current total count\n");
 	printf("h ) Save Histograms to file\n");
 	printf("w ) Save waveforms to file\n\n\n");
 }
@@ -204,7 +205,7 @@ int CountHistogram(int b, int ch, uint32_t *EHisto)
     for(i=0; i<(1<<12); i++) {
 		count += EHisto[i];
 	}
-    printf("Total Count: %d", count);
+    printf("Total Count: %d\n", count);
 
     return 0;
 }
