@@ -73,6 +73,7 @@ int ProgramDigitizer(int handle, DigitizerParams_t Params, CAEN_DGTZ_DPP_PHA_Par
     // Set the number of samples for each waveform
     ret |= CAEN_DGTZ_SetRecordLength(handle, Params.RecordLength);
 
+
     // Set the I/O level (CAEN_DGTZ_IOLevel_NIM or CAEN_DGTZ_IOLevel_TTL)
     ret |= CAEN_DGTZ_SetIOLevel(handle, Params.IOlev);
 
@@ -301,8 +302,6 @@ int main(int argc, char *argv[])
 		Params[b].ChannelMask = DPPcfg.GroupTrgEnableMask;                               // Channel enable mask
 		Params[b].EventAggr = 0;                                   // number of events in one aggregate (0=automatic)
         Params[b].PulsePolarity = DPPcfg.PulsePolarity; // Pulse Polarity (this parameter can be individual)
-        printf("hi");
-        printf("%d", DPPcfg.GWn);
         Params[b].GWn = DPPcfg.GWn;
 		for (write_n = 0; write_n < Params[b].GWn; write_n++) {
             printf("hi");
@@ -450,7 +449,7 @@ int main(int argc, char *argv[])
                     // Spit out total count
                     for (ch = 0; ch < MaxNChannels; ch++)
                         if (ECnt[b][ch] != 0) 
-                            CountHistogram(b, ch, EHisto[b][ch]);
+                            GetECnt(b, ch, ECnt[b][ch]);
             if (c == 'w')
                 for (b = 0; b < MAXNB; b++)
                     for (ch = 0; ch < MaxNChannels; ch++)

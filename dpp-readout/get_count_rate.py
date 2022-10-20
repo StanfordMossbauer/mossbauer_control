@@ -5,7 +5,7 @@ import time
 
 daqdir = '/home/joeyh/daq/dpp-pha/dpp-readout'
 datadir = '/home/joeyh/analysis/'
-config_file = 'unamplified_config'
+config_file = 'co57_config'
 
 start_time = time.time()
 try:

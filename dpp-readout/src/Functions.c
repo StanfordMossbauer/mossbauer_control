@@ -185,27 +185,12 @@ void PrintInterface() {
 	printf("h ) Save Histograms to file\n");
 	printf("w ) Save waveforms to file\n\n\n");
 }
-
-/* --------------------------------------------------------------------------------------------------------- */
-/*! \fn      CountHistograms(uint32_t EHisto[8][1<<MAXNBITS])
-*   \brief   Count Histograms to output files
-*   \return  0=success; -1=error */
-/* --------------------------------------------------------------------------------------------------------- */
-
-int CountHistogram(int b, int ch, uint32_t *EHisto)
+int GetECnt(int b, int ch, int ECnt)
 {
 	/*
 	* This function counts the bin contents of the histogram
 	*/
-    FILE *fh;
-    int i;
-    char filename[20];
-    int count;
-    count = 0;
-    for(i=0; i<(1<<12); i++) {
-		count += EHisto[i];
-	}
-    printf("Total Count: %d\n", count);
+    printf("Total Count: %d\n", ECnt);
 
     return 0;
 }
