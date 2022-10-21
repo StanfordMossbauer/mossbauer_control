@@ -134,6 +134,8 @@ class DFR1507A:
         DIR_SELECT = 24  # Direction select. 0=CW, 1=CCW
         RES_SELECT = 16  # res select. 0=RS1, 1=RS2
         AW_OFF = 25      # All windings off pin. 0=no drive. 1= regular drive
+        DUTY = 50           # Duty cycle
+        MAX_FREQ = 500e3    # Don't pulse faster than this. Controller technically can handle
         self.__dict__.update(locals())
         # Clean up any residual connections
         GPIO.cleanup()
