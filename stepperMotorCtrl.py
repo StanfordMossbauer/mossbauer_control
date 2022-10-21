@@ -9,12 +9,12 @@ from moku.instruments import WaveformGenerator, Oscilloscope
 
 #################
 ## STAGE CONFIG #
-BALL_SCREW_LEAD = 6 # mm, ball screw lead
+BALL_SCREW_LEAD = 2 # mm, ball screw lead
 RES_1 = 0.00288 
 RES_2 = 0.009
 RES_1 = BALL_SCREW_LEAD*RES_1/360 # in mm
 RES_2 = BALL_SCREW_LEAD*RES_2/360 # in mm
-D_TRAVEL = 50 # mm of travel
+D_TRAVEL = 40 # mm of travel
 V_RETURN = 5 # mm/sec at which to return to starting pos
 ## STAGE CONFIG #
 #################
