@@ -21,7 +21,7 @@ if not os.path.exists(data_file):
     with open(data_file, 'w') as f:
         f.write('vel\tcount\tseconds\tstart-time\t\tstop-time\n')
 
-digitizer = DPPReadout(join(daqdir, config_file))
+digitizer = DPPReadout(join(daqdir, config_file), verbose=True)
 digitizer.timed_acquire(time_s)
 count = digitizer.count
 stop_time = time.time()

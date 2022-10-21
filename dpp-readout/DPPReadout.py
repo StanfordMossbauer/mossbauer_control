@@ -65,13 +65,21 @@ class DPPReadout:
             self.expect(expect_string)
         return
 
+    def start(self):
+        self.send(key_map['start'], 'Readout Rate')
+        return
+
+    def stop(self):
+        self.send(key_map['stop'], 'Acquisition Stopped for Board 0')
+        return
+
     def timed_acquire(self, time_s):
         """Acquire for fixed time
         TODO: stream readout rate
         """
-        self.send(key_map['start'], 'Readout Rate')
+        self.start()
         time.sleep(time_s)
-        self.send(key_map['stop'], 'Acquisition Stopped for Board 0')
+        self.stop()
         self.update_count()
         return
 
@@ -87,14 +95,10 @@ class DPPReadout:
 if __name__=='__main__':
     verbose = True
     save = True
-    config_file = 'unamplified_config'
-    base_path = '/home/joeyh/local_data/'
-    meas_name = 'test'
-    save_path = join(base_path, meas_name)
-
-    base_filename = 'am241'
-
-    if not os.path.isdir(save_path):
-        os.makedirs(save_path)
+    config_file = 'co57_config'
 
     digi = DPPReadout(config_file, verbose=verbose)
+    digi.start()
+    time.sleep(100)
+    digi.stop()
+    digi.update_count()

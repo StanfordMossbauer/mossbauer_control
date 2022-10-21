@@ -395,6 +395,7 @@ int main(int argc, char *argv[])
             goto QuitProgram;
         }
     }
+    
 
     /* WARNING: The mallocs MUST be done after the digitizer programming,
     because the following functions needs to know the digitizer configuration

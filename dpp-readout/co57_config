@@ -40,5 +40,9 @@ DECIMATION 0  # decimation (the input signal samples are averaged within this nu
 ###############
 # Free Writes #
 ###############
-WRITE_REGISTER 0x10C8 0x00001F4 0xFFFFFFFF
-WRITE_REGISTER 0x10CC 0x00002EE 0xFFFFFFFF
+# energy skim values
+WRITE_REGISTER 0x10C8 0x00001F4 0xFFFFFFFF  # lower
+WRITE_REGISTER 0x10CC 0x00002EE 0xFFFFFFFF  # upper
+
+# block size
+WRITE_REGISTER 0x1034 0x000000A 0xFFFFFFFF
