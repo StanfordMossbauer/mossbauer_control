@@ -336,15 +336,15 @@ def stopMotion(ctrl, moku):
     
 
 
-# Connect to the moku
-moku = mokuGO('192.168.73.1')
-# Turn on the base high voltage
-moku.BaseHVon(1,1) # Default to 1kV bias on channel 1
+if __name__=='__main__':
+    # Connect to the moku
+    moku = mokuGO('192.168.73.1')
+    # Turn on the base high voltage
+    moku.BaseHVon(1,1) # Default to 1kV bias on channel 1
 
-ctrl = DFR1507A()
-ctrl.AWoff()
-ctrl.setDirection('CCW')
-ctrl.setResolution(1)
-ctrl.setVelocity(0.5) # mm/s
-signal.signal(signal.SIGINT, signal_handler)
-
+    ctrl = DFR1507A()
+    ctrl.AWoff()
+    ctrl.setDirection('CCW')
+    ctrl.setResolution(1)
+    ctrl.setVelocity(0.5) # mm/s
+    signal.signal(signal.SIGINT, signal_handler)
