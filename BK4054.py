@@ -1,6 +1,17 @@
 import pyvisa
 from time import sleep
 
+#################
+## FUNC GEN CONFIG #
+DUTY = 50           # Duty cycle
+MAX_FREQ = 500e3    # Don't pulse faster than this. Controller technically can handle up to 1MHz.
+LOAD = 'HZ'         # Hi Z load by default.
+WAVEFORM = 'PULSE'  # Type of waveform
+AMP = 5             # Amplitude of pulse
+OFFSET = 2.5        # Makes a TTL like signal with the above amp
+
+#################
+
 class BK4054:
     '''
     Class object to interact with the BK Precision 4054B signal generator,
