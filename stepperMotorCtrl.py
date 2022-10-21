@@ -27,6 +27,10 @@ class mokuGO:
         except Exception as e:
             print(e)
             print(f'Unable to connect to Moku GO at {ip}')
+        self.DUTY = 50           # Duty cycle
+        self.AMP = 5             # Amplitude of pulse
+        self.OFFSET = 2.5        # Makes a TTL like signal with the above amp
+        return
 
     def summary(self):
         '''
@@ -36,7 +40,7 @@ class mokuGO:
         print(self.inst.summary())
         return
 
-    def BaseHVon(self, Vout:float, channel:int=1):
+    def setBaseHV(self, Vout:float, channel:int=1):
         '''
         DC voltage output to generate PMT HV with active base.
 
@@ -44,6 +48,7 @@ class mokuGO:
         ------------
         Vout: float
             Desired control voltage [V]. HV is x1000.
+            set to 0 to turn off
         channel: int
             Desired channel to use. Defaults to 1.
 
@@ -52,25 +57,14 @@ class mokuGO:
         Status message.
         '''
         self.osc = Oscilloscope(self.ip, force_connect=True)
-        self.osc.set_power_supply(channel,voltage=Vout, current=0.1, enable=True)
-        print(self.osc.get_power_supply(channel))
-        self.osc.relinquish_ownership()
-        return
-
-    def BaseHVoff(self, Vout:float, channel: int=1):
-        '''
-        Turn off PS 1.
-
-        Parameters:
-        ------------
-        channel: int
-            Power supply # to disable. Defaults to 1.
-        Returns:
-        --------
-        Status message.
-        '''
-        self.osc = Oscilloscope(self.ip, force_connect=True)
-        self.osc.set_power_supply(channel, enable=False)
+        if Vout:
+            enable = True
+        self.osc.set_power_supply(
+            channel,
+            voltage=Vout,
+            current=0.1,
+            enable=enable
+        )
         print(self.osc.get_power_supply(channel))
         self.osc.relinquish_ownership()
         return
@@ -89,7 +83,7 @@ class mokuGO:
         Status message.
         '''
         self.inst = WaveformGenerator(self.ip, force_connect=True)
-        self.inst.generate_waveform(channel=channel, type='Square', offset=OFFSET, amplitude=AMP, frequency=freq, duty=DUTY)
+        self.inst.generate_waveform(channel=channel, type='Square', offset=self.OFFSET, amplitude=self.AMP, frequency=freq, duty=self.DUTY)
         print(self.inst.summary())
         self.inst.relinquish_ownership()
         return
@@ -108,7 +102,7 @@ class mokuGO:
         Status message.
         '''
         self.inst = WaveformGenerator(self.ip, force_connect=True)
-        self.inst.generate_waveform(channel=channel, type='Square', offset=0, amplitude=0, duty=DUTY)
+        self.inst.generate_waveform(channel=channel, type='Square', offset=0, amplitude=0, duty=self.DUTY)
         print(self.inst.summary())
         self.inst.relinquish_ownership()
         return()
@@ -131,11 +125,13 @@ class DFR1507A:
 
         '''
         # ugly hardcoding
+        RES_1 = 2*0.00288/360 # (ball screw lead mm/rev) * (?) / 1rev
+        RES_2 = 2*0.009/360 # (ball screw lead mm/rev) * (?) / 1rev
         DIR_SELECT = 24  # Direction select. 0=CW, 1=CCW
         RES_SELECT = 16  # res select. 0=RS1, 1=RS2
         AW_OFF = 25      # All windings off pin. 0=no drive. 1= regular drive
-        DUTY = 50           # Duty cycle
-        MAX_FREQ = 500e3    # Don't pulse faster than this. Controller technically can handle
+        MAX_FREQ = 500e3    # Don't pulse faster than this. Controller technically can handle up to 1MHz.
+
         self.__dict__.update(locals())
         # Clean up any residual connections
         GPIO.cleanup()
@@ -146,11 +142,11 @@ class DFR1507A:
         GPIO.setup(self.AW_OFF, GPIO.OUT)
         # GPIO.setup(DRIVE, GPIO.OUT)
 
-        if self.vel/RES_1 > MAX_FREQ:
+        if self.vel/self.RES_1 > self.MAX_FREQ:
             print(f"You've requested a step frequency of {self.vel:.2f} Hz. Setting to {MAX_FREQ/1e3:.2f} kHz")
-            self.fStep = MAX_FREQ
+            self.fStep = self.MAX_FREQ
         else:
-            self.fStep = self.vel/RES_1 # In Hz
+            self.fStep = self.vel/self.RES_1 # In Hz
         GPIO.output(self.AW_OFF, GPIO.LOW) # By default, turn off drive
         return
         
@@ -223,9 +219,9 @@ class DFR1507A:
             self.setDirection('CW')
         vel = abs(vel)
         if self.RES==1:
-            self.fStep = vel/RES_1 # In Hz
+            self.fStep = vel/self.RES_1 # In Hz
         else:
-            self.fStep = vel/RES_2
+            self.fStep = vel/self.RES_2
         print(f"Setting velocity to {vel:.3f}mm/sec, stepping at {self.fStep:3f}Hz")
         return()
     
@@ -259,22 +255,22 @@ class ScanController:
         for key, val in default_config.items():
             setattr(self, key, kwargs.get(key, val))
 
-    D_TRAVEL=40 # mm of travel
-    V_RETURN=5 # mm/sec at which to return to starting pos
         self.ctrl = DFR1507A()
         self.stopMotion()
         return
 
     def step(self, vel, dist, res=1):
+        """Step for dist mm at vel mm/s
+        """
         self.ctrl.setResolution(res)
         tStep = dist/np.abs(vel)
         self.ctrl.setVelocity(vel)
-        self.moku.PWMon(ctrl.fStep, self.mokuWGChannel)
+        self.moku.PWMon(self.ctrl.fStep, self.mokuWGChannel)
         self.ctrl.AWon()
         sleep(self.commandSleepTime)
-        sleep(tScan)
-        ctrl.AWoff()
-        moku.PWMoff(self.mokuWGChannel)
+        sleep(tStep)
+        self.ctrl.AWoff()
+        self.moku.PWMoff(self.mokuWGChannel)
         self.ctrl.setResolution(1)  # I think we want this...
         return
         
@@ -292,32 +288,29 @@ class ScanController:
         Nothing.
         
         '''
-        self.step(vel, D_TRAVEL)
+        self.step(vel, self.scanTravelDist)
         # And then go back to where we started.
-        self.step(V_RETURN * np.sign(vel), D_TRAVEL, 2)
+        self.step(
+            -1 * self.returnVelocity * np.sign(vel),
+            self.scanTravelDist, 
+            2
+        )
         return
 
-    def stopMotion():
+    def stopMotion(self):
         '''
         Function to stop all motion and turn off TTL output from the function generator.
         Returns:
         ---------
         Nothing.
         '''
-        ctrl.AWoff()
-        moku.PWMoff(self.mokuWGChannel)
+        self.ctrl.AWoff()
+        self.moku.PWMoff(self.mokuWGChannel)
         return
 
 
 if __name__=='__main__':
-    # Connect to the moku
-    moku = mokuGO('192.168.73.1')
+    scan = ScanController()
     # Turn on the base high voltage
-    moku.BaseHVon(1,1) # Default to 1kV bias on channel 1
-
-    ctrl = DFR1507A()
-    ctrl.AWoff()
-    ctrl.setDirection('CCW')
-    ctrl.setResolution(1)
-    ctrl.setVelocity(0.5) # mm/s
-    signal.signal(signal.SIGINT, signal_handler)
+    scan.moku.setBaseHV(1, 1) # Default to 1kV bias on channel 1
+    scan.scan(0.2)
