@@ -259,19 +259,21 @@ class ScanController:
         self.stopMotion()
         return
 
-    def step(self, vel, dist, res=1):
-        """Step for dist mm at vel mm/s
-        """
+    def start_step(self, vel, res=1):
         self.ctrl.setResolution(res)
-        tStep = dist/np.abs(vel)
         self.ctrl.setVelocity(vel)
         self.moku.PWMon(self.ctrl.fStep, self.mokuWGChannel)
         self.ctrl.AWon()
+        return
+
+    def step(self, vel, dist, res=1):
+        """Step for dist mm at vel mm/s
+        """
+        tStep = dist/np.abs(vel)
+        self.start_step(vel, res)
         sleep(self.commandSleepTime)
         sleep(tStep)
-        self.ctrl.AWoff()
-        self.moku.PWMoff(self.mokuWGChannel)
-        self.ctrl.setResolution(1)  # I think we want this...
+        self.stopMotion()
         return
         
     def scan(self, vel):
@@ -306,6 +308,7 @@ class ScanController:
         '''
         self.ctrl.AWoff()
         self.moku.PWMoff(self.mokuWGChannel)
+        self.ctrl.setResolution(1)  # I think we want this...
         return
 
 
