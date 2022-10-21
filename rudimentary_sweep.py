@@ -1,6 +1,7 @@
 import stepperMotorCtrl
 from pexpect import pxssh
 import time
+import numpy as np
 
 def remote_timed_daq(time_s, velocity, name):
     dataserver_daq_script = '/home/joeyh/daq/dpp-pha/dpp-readout/get_count_rate.py'
@@ -52,10 +53,9 @@ if __name__=='__main__':
         while time.time() < (start_time + tScan):
             time.sleep(1)
         scan.stopMotion()
-        tReturn = self.scanTravelDist/self.returnVelocity
         scan.step(
-            -1 * self.returnVelocity * np.sign(vel),
-            self.scanTravelDist, 
+            -1 * scan.returnVelocity * np.sign(vel),
+            scan.scanTravelDist, 
             2
         )
     print('scan done')

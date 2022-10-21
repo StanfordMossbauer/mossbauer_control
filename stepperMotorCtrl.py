@@ -6,6 +6,7 @@ from time import sleep
 import signal, sys
 from moku.instruments import WaveformGenerator, Oscilloscope
 import configparser
+import atexit
 
 
 # Establish a connection to a moku
@@ -257,6 +258,7 @@ class ScanController:
 
         self.ctrl = DFR1507A()
         self.stopMotion()
+        atexit.register(self.stopMotion)
         return
 
     def start_step(self, vel, res=1):
