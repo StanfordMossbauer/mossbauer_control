@@ -269,70 +269,58 @@ class DFR1507A:
         print(f"ENABLED current to all windings...")
         return()
 
-def scan(ctrl, moku, vel: float=0):
-    '''
-    Initiate a scan at some velocity.
 
-    Parameters:
-    --------------
-    ctrl: DFR1507A class object
-        The controller.
-    moku: mokuGO class object
-        Moku GO.
-    vel: float
-        Velocity in mm/sec.
+class ScanController:
+    def __init__(self, **kwargs):
+        self.moku = mokuGO(kwargs.get('mokuIP', '192.168.73.1'))
+        self.mokuWGChannel = kwargs.get('mokuWGChannel', 2)
+        self.commandSleepTime = kwargs.get('commandSleepTime', 1)
+        self.ctrl = DFR1507A()
+        self.stopMotion()
+        return
 
-    Returns:
-    ---------
-    Nothing.
-    
-    '''
-    if vel<0:
-        returnVel = V_RETURN
-    else:
-        returnVel = -V_RETURN
-    tScan = D_TRAVEL/np.abs(vel) # seconds to scan
-    tReturn = D_TRAVEL/V_RETURN
-    ctrl.setVelocity(vel)
-    moku.PWMon(ctrl.fStep, 2) # Defaults to use channel 2
-    ctrl.AWon()
-    sleep(1)
-    sleep(tScan)
-    ctrl.AWoff()
-    moku.PWMoff(2)
-    # And then go back to where we started.
-    ctrl.setResolution(2)
-    ctrl.setVelocity(returnVel)
-    moku.PWMon(ctrl.fStep,2)
-    ctrl.AWon()
-    sleep(1)
-    sleep(tReturn)
-    ctrl.AWoff()
-    moku.PWMoff()
-    sleep(1)
-    ctrl.setResolution(1) # Reset to the fine scan...
-    return
+    def step(self, vel, dist, res=1):
+        self.ctrl.setResolution(res)
+        tStep = dist/np.abs(vel)
+        self.ctrl.setVelocity(vel)
+        self.moku.PWMon(ctrl.fStep, self.mokuWGChannel)
+        self.ctrl.AWon()
+        sleep(self.commandSleepTime)
+        sleep(tScan)
+        ctrl.AWoff()
+        moku.PWMoff(self.mokuWGChannel)
+        self.ctrl.setResolution(1)  # I think we want this...
+        return
+        
+    def scan(self, vel):
+        '''
+        Initiate a scan at some velocity.
 
-def stopMotion(ctrl, moku):
-    '''
-    Function to stop all motion and turn off TTL output from the function generator.
+        Parameters:
+        --------------
+        vel: float
+            Velocity in mm/sec.
 
-    Parameters:
-    --------------
-    ctrl: DFR1507A class object
-        The controller.
-    moku: MokuGo class object.
-        Moku Go object.
-    vel: float
-        Velocity in mm/sec.
+        Returns:
+        ---------
+        Nothing.
+        
+        '''
+        self.step(vel, D_TRAVEL)
+        # And then go back to where we started.
+        self.step(V_RETURN * np.sign(vel), D_TRAVEL, 2)
+        return
 
-    Returns:
-    ---------
-    Nothing.
-    '''
-    ctrl.AWoff()
-    moku.PWMoff(2)
-    return
+    def stopMotion():
+        '''
+        Function to stop all motion and turn off TTL output from the function generator.
+        Returns:
+        ---------
+        Nothing.
+        '''
+        ctrl.AWoff()
+        moku.PWMoff(self.mokuWGChannel)
+        return
     
 
 
