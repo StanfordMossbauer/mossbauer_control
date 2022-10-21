@@ -5,53 +5,8 @@ import pyvisa
 from time import sleep
 import signal, sys
 from moku.instruments import WaveformGenerator, Oscilloscope
+import configparser
 
-
-#################
-## STAGE CONFIG #
-BALL_SCREW_LEAD = 2 # mm, ball screw lead
-RES_1 = 0.00288 
-RES_2 = 0.009
-RES_1 = BALL_SCREW_LEAD*RES_1/360 # in mm
-RES_2 = BALL_SCREW_LEAD*RES_2/360 # in mm
-D_TRAVEL = 40 # mm of travel
-V_RETURN = 5 # mm/sec at which to return to starting pos
-## STAGE CONFIG #
-#################
-#################
-## GPIO CONFIG #
-DIR_SELECT = 24  # Direction select. 0 = CW, 1=CCW
-RES_SELECT = 16  # res select. 0 = RS1, 1 = RS2
-AW_OFF = 25      # All windings off pin. 0 = no drive. 1= regular drive
-#################
-
-#################
-## FUNC GEN CONFIG #
-DUTY = 50           # Duty cycle
-MAX_FREQ = 500e3    # Don't pulse faster than this. Controller technically can handle up to 1MHz.
-LOAD = 'HZ'         # Hi Z load by default.
-WAVEFORM = 'PULSE'  # Type of waveform
-AMP = 5             # Amplitude of pulse
-OFFSET = 2.5        # Makes a TTL like signal with the above amp
-
-#################
-
-#####################
-# A CTRL-C HANDLER  #
-def signal_handler(*args):
-    stopMotion(ctrl, moku)
-    print('You pressed Ctrl+C!')
-#####################
-
-
-# Clean up any residual connections
-GPIO.cleanup()
-# Setup the pins...
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(DIR_SELECT,GPIO.OUT)
-GPIO.setup(RES_SELECT,GPIO.OUT)
-GPIO.setup(AW_OFF,GPIO.OUT)
-# GPIO.setup(DRIVE,GPIO.OUT)
 
 # Establish a connection to a moku
 class mokuGO:
@@ -72,6 +27,7 @@ class mokuGO:
         except Exception as e:
             print(e)
             print(f'Unable to connect to Moku GO at {ip}')
+
     def summary(self):
         '''
         Print configuration status of the Moku Waveform Generator.
@@ -79,6 +35,7 @@ class mokuGO:
         self.inst = WaveformGenerator(self.ip, force_connect=True)
         print(self.inst.summary())
         return
+
     def BaseHVon(self, Vout:float, channel:int=1):
         '''
         DC voltage output to generate PMT HV with active base.
@@ -99,6 +56,7 @@ class mokuGO:
         print(self.osc.get_power_supply(channel))
         self.osc.relinquish_ownership()
         return
+
     def BaseHVoff(self, Vout:float, channel: int=1):
         '''
         Turn off PS 1.
@@ -116,6 +74,7 @@ class mokuGO:
         print(self.osc.get_power_supply(channel))
         self.osc.relinquish_ownership()
         return
+
     def PWMon(self, freq:float, channel: int=2):
         '''
         Turn on 50% duty cycle square wave with set frequency.
@@ -133,7 +92,8 @@ class mokuGO:
         self.inst.generate_waveform(channel=channel, type='Square', offset=OFFSET, amplitude=AMP, frequency=freq, duty=DUTY)
         print(self.inst.summary())
         self.inst.relinquish_ownership()
-        return()
+        return
+
     def PWMoff(self, channel: int=2):
         '''
         Turn off 50% duty cycle square wave with set frequency.
@@ -170,13 +130,27 @@ class DFR1507A:
         RES: int
 
         '''
+        # ugly hardcoding
+        DIR_SELECT = 24  # Direction select. 0=CW, 1=CCW
+        RES_SELECT = 16  # res select. 0=RS1, 1=RS2
+        AW_OFF = 25      # All windings off pin. 0=no drive. 1= regular drive
         self.__dict__.update(locals())
+        # Clean up any residual connections
+        GPIO.cleanup()
+        # Setup the pins...
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.DIR_SELECT, GPIO.OUT)
+        GPIO.setup(self.RES_SELECT, GPIO.OUT)
+        GPIO.setup(self.AW_OFF, GPIO.OUT)
+        # GPIO.setup(DRIVE, GPIO.OUT)
+
         if self.vel/RES_1 > MAX_FREQ:
             print(f"You've requested a step frequency of {self.vel:.2f} Hz. Setting to {MAX_FREQ/1e3:.2f} kHz")
             self.fStep = MAX_FREQ
         else:
             self.fStep = self.vel/RES_1 # In Hz
-        GPIO.output(AW_OFF, GPIO.LOW) # By default, turn off drive
+        GPIO.output(self.AW_OFF, GPIO.LOW) # By default, turn off drive
+        return
         
 
     def cleanup(self):
@@ -200,14 +174,14 @@ class DFR1507A:
         Nothing.
         '''
         if res==1:
-            GPIO.output(RES_SELECT,GPIO.HIGH)
+            GPIO.output(self.RES_SELECT, GPIO.HIGH)
         elif res==2:
-            GPIO.output(RES_SELECT,GPIO.LOW)
+            GPIO.output(self.RES_SELECT, GPIO.LOW)
         else:
             print(f"You requested for {res}, please specify either 1 or 2.")
         self.RES=res
         print(f"Using resolution set by RS{self.RES}")
-        return()
+        return
 
     def setDirection(self, DIR: str):
         '''
@@ -219,14 +193,14 @@ class DFR1507A:
             Direction of rotation. Must be "CW" or "CCW".
         '''
         if DIR=='CW':
-            GPIO.output(DIR_SELECT,GPIO.HIGH)
+            GPIO.output(self.DIR_SELECT, GPIO.HIGH)
         elif DIR=='CCW':
-            GPIO.output(DIR_SELECT,GPIO.LOW)
+            GPIO.output(self.DIR_SELECT, GPIO.LOW)
         else:
             print(f"You requested for {DIR} rotation, please specify either 'CW' or 'CCW'.")
         self.DIR=DIR
         print(f"Direction of rotation is {self.DIR}")
-        return()
+        return
 
     def setVelocity(self, vel: float):
         '''
@@ -257,7 +231,7 @@ class DFR1507A:
         '''
         Function to DISABLE drive to the motor.
         '''
-        GPIO.output(AW_OFF,GPIO.LOW)
+        GPIO.output(self.AW_OFF,GPIO.LOW)
         print(f"CUT OFF current to all windings...")
         return()
 
@@ -265,16 +239,26 @@ class DFR1507A:
         '''
         Function to ENABLE drive to the motor.
         '''
-        GPIO.output(AW_OFF,GPIO.HIGH)
+        GPIO.output(self.AW_OFF,GPIO.HIGH)
         print(f"ENABLED current to all windings...")
         return()
 
 
 class ScanController:
     def __init__(self, **kwargs):
+        default_config = dict(
+            mokuWGChannel=2,
+            commandSleepTime=1,  # s
+            scanTravelDist=40,  # mm
+            returnVelocity=5,  # mm/s
+        )
+
         self.moku = mokuGO(kwargs.get('mokuIP', '192.168.73.1'))
-        self.mokuWGChannel = kwargs.get('mokuWGChannel', 2)
-        self.commandSleepTime = kwargs.get('commandSleepTime', 1)
+        for key, val in default_config.items():
+            setattr(self, key, kwargs.get(key, val))
+
+    D_TRAVEL=40 # mm of travel
+    V_RETURN=5 # mm/sec at which to return to starting pos
         self.ctrl = DFR1507A()
         self.stopMotion()
         return
@@ -321,7 +305,6 @@ class ScanController:
         ctrl.AWoff()
         moku.PWMoff(self.mokuWGChannel)
         return
-    
 
 
 if __name__=='__main__':
