@@ -295,7 +295,7 @@ def scan(ctrl, moku, vel: float=0):
     tReturn = D_TRAVEL/V_RETURN
     ctrl.setVelocity(vel)
     moku.PWMon(ctrl.fStep, 2) # Defaults to use channel 2
-    ctrl.AWon() 
+    ctrl.AWon()
     sleep(1)
     sleep(tScan)
     ctrl.AWoff()
@@ -307,8 +307,8 @@ def scan(ctrl, moku, vel: float=0):
     ctrl.AWon()
     sleep(1)
     sleep(tReturn)
-    moku.PWMoff()
     ctrl.AWoff()
+    moku.PWMoff()
     sleep(1)
     ctrl.setResolution(1) # Reset to the fine scan...
     return
