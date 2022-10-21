@@ -1,3 +1,14 @@
-# Mossbauer-DAQ
-DAQ code for Mossbauer setup
+# CAEN Digitizer Readout for DPP-PHA Firmware
 
+### Installation
+```
+make
+```
+
+### Usage
+```
+dpp-readout <config-file>
+```
+where `<config-file>` is a text file formatted like `test_config`.
+
+If you hit `w` during acquisition, you can plot the outputs with `plot_traces.py`.
