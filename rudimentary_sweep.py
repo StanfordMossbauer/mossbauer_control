@@ -24,7 +24,7 @@ if __name__=='__main__':
     name = '20221021_1412_co57'
     #velocities = np.array([-0.4, -0.3, -0.2, -0.159, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4])
     #velocities = np.array([-1.0, 1.0, -1.0, 1.0, -1.0, 1.0])
-    velocities = np.array([-0.2, 0.0, 0.2, 0.4])
+    velocities = np.array([-1.0])
     scan = stepperMotorCtrl.ScanController(
         mokuWGChannel=2,
         commandSleepTime=1,
@@ -35,10 +35,10 @@ if __name__=='__main__':
     # Turn on the base high voltage
     scan.moku.setBaseHV(1, 1) # Default to 1kV bias on channel 1
     scan_times = scan.scanTravelDist / np.abs(velocities)
-    scan_times[scan_times==np.inf] = scan_times.min()
+    scan_times[scan_times==np.inf] = scan_times.min()  # fix v=0 case
+    daq_times = (scan_times * 0.9).astype(int)
     print('\nTotal scanning time (s): ', scan_times.sum(), '\n')
     print('\nTotal DAQ time (s): ', daq_times.sum(), '\n')
-    daq_times = (scan_times * 0.9).astype(int)
     for i, vel in enumerate(velocities):
         print(f'initiating scan at {vel} mm/s')
         tScan = scan_times[i]
@@ -46,7 +46,6 @@ if __name__=='__main__':
         start_time = time.time()
         scan.start_step(vel)
         print('sending DAQ command via ssh')
-        # TODO: move to subprocess
         remote_timed_daq(daq_times[i], vel, name)
         while time.time() < (start_time + tScan):
             time.sleep(1)

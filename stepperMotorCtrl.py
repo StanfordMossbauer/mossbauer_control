@@ -28,17 +28,10 @@ class mokuGO:
         except Exception as e:
             print(e)
             print(f'Unable to connect to Moku GO at {ip}')
+            sys.exit()
         self.DUTY = 50           # Duty cycle
         self.AMP = 5             # Amplitude of pulse
         self.OFFSET = 2.5        # Makes a TTL like signal with the above amp
-        return
-
-    def summary(self):
-        '''
-        Print configuration status of the Moku Waveform Generator.
-        '''
-        self.inst = WaveformGenerator(self.ip, force_connect=True)
-        print(self.inst.summary())
         return
 
     def setBaseHV(self, Vout:float, channel:int=1):
@@ -68,9 +61,10 @@ class mokuGO:
         )
         print(self.osc.get_power_supply(channel))
         self.osc.relinquish_ownership()
+        self.inst = WaveformGenerator(self.ip, force_connect=True)  # reset API conn
         return
 
-    def PWMon(self, freq:float, channel: int=2):
+    def _setPWM(self, freq:float, channel: int=2):
         '''
         Turn on 50% duty cycle square wave with set frequency.
 
@@ -83,30 +77,33 @@ class mokuGO:
         -------------
         Status message.
         '''
-        self.inst = WaveformGenerator(self.ip, force_connect=True)
-        self.inst.generate_waveform(channel=channel, type='Square', offset=self.OFFSET, amplitude=self.AMP, frequency=freq, duty=self.DUTY)
+        #self.inst = WaveformGenerator(self.ip, force_connect=True)
+        wftype = 'Off'
+        if freq:
+            wftype = 'Square'
+        self.inst.generate_waveform(
+            channel=channel,
+            type=wftype,
+            offset=self.OFFSET,
+            amplitude=self.AMP,
+            frequency=freq,
+            duty=self.DUTY,
+        )
         print(self.inst.summary())
-        self.inst.relinquish_ownership()
+        #self.inst.relinquish_ownership()
+        return
+
+    def PWMon(self, freq:float, channel: int=2):
+        ''' Turn off 50% duty cycle square wave with set frequency.
+        '''
+        self._setPWM(freq, channel)
         return
 
     def PWMoff(self, channel: int=2):
+        ''' Turn off 50% duty cycle square wave with set frequency.
         '''
-        Turn off 50% duty cycle square wave with set frequency.
-
-        Parameters:
-        -------------
-        freq: float
-            Desired frequency.
-
-        Returns:
-        -------------
-        Status message.
-        '''
-        self.inst = WaveformGenerator(self.ip, force_connect=True)
-        self.inst.generate_waveform(channel=channel, type='Square', offset=0, amplitude=0, duty=self.DUTY)
-        print(self.inst.summary())
-        self.inst.relinquish_ownership()
-        return()
+        self._setPWM(0, channel)
+        return
         
 
 class DFR1507A:
