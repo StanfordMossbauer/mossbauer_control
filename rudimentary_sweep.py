@@ -29,7 +29,8 @@ if __name__=='__main__':
         mokuWGChannel=2,
         commandSleepTime=1,
         scanTravelDist=40,
-        returnVelocity=5
+        returnVelocity=5,
+        logfileName=name+'.log',
     )
 
     # Turn on the base high voltage

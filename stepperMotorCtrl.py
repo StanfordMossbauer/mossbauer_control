@@ -3,10 +3,31 @@ import numpy as np
 import RPi.GPIO as GPIO
 import pyvisa
 from time import sleep
-import signal, sys
+import signal
+import sys, os
 from moku.instruments import WaveformGenerator, Oscilloscope
 import configparser
 import atexit
+
+import logging
+
+class StreamToLogger(object):
+    """Fake file-like stream object that redirects writes to a logger instance.
+
+    from https://stackoverflow.com/questions/19425736/how-to-redirect-stdout-and-stderr-to-logger-in-python
+    """
+    def __init__(self, logger, level):
+       self.logger = logger
+       self.level = level
+       self.linebuf = ''
+       return
+
+    def write(self, buf):
+       for line in buf.rstrip().splitlines():
+          self.logger.log(self.level, line.rstrip())
+
+    def flush(self):
+        pass
 
 
 # Establish a connection to a moku
@@ -247,15 +268,33 @@ class ScanController:
             commandSleepTime=1,  # s
             scanTravelDist=40,  # mm
             returnVelocity=5,  # mm/s
+            logfileName='scan.log',
         )
-
-        self.moku = mokuGO(kwargs.get('mokuIP', '192.168.73.1'))
         for key, val in default_config.items():
             setattr(self, key, kwargs.get(key, val))
+        self.log_output(self.logfileName)
+
+        self.moku = mokuGO(kwargs.get('mokuIP', '192.168.73.1'))
 
         self.ctrl = DFR1507A()
         self.stopMotion()
         atexit.register(self.stopMotion)
+        return
+
+
+    def log_output(self, logfile):
+        logging.basicConfig(
+                level=logging.DEBUG,
+                format='%(asctime)s:%(levelname)s:\t%(message)s',
+                handlers=[
+                    logging.FileHandler(logfile),
+                    logging.StreamHandler()
+                ],
+                #filemode='a'
+                )
+        log = logging.getLogger('scanlog')
+        sys.stdout = StreamToLogger(log, logging.INFO)
+        sys.stderr = StreamToLogger(log, logging.ERROR)
         return
 
     def start_step(self, vel, res=1):
