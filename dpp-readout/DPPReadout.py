@@ -77,8 +77,16 @@ class DPPReadout:
         """Acquire for fixed time
         TODO: stream readout rate
         """
+        max_time = 100
+        cycles = int(time_s / max_time)
+        remainder = time_s % max_time
+        for i in range(cycles):
+            self.start()
+            time.sleep(max_time)
+            self.stop()
+            self.update_count()
         self.start()
-        time.sleep(time_s)
+        time.sleep(remainder)
         self.stop()
         self.update_count()
         return
@@ -93,12 +101,16 @@ class DPPReadout:
 
 
 if __name__=='__main__':
-    verbose = True
-    save = True
+    verbose = False
     config_file = 'co57_config'
 
     digi = DPPReadout(config_file, verbose=verbose)
     digi.start()
-    time.sleep(100)
+    time.sleep(90)
     digi.stop()
     digi.update_count()
+    digi.start()
+    time.sleep(90)
+    digi.stop()
+    digi.update_count()
+    print(digi.count)
