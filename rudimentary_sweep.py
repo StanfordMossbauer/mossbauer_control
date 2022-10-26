@@ -21,10 +21,9 @@ def remote_timed_daq(time_s, velocity, name):
     return
 
 if __name__=='__main__':
-    name = '20221021_1412_co57'
-    #velocities = np.array([-0.4, -0.3, -0.2, -0.159, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4])
-    #velocities = np.array([-1.0, 1.0, -1.0, 1.0, -1.0, 1.0])
-    velocities = np.array([-1.0])
+    name = '20221026_0926'
+    velocities = np.array([-1.0, -0.4, -0.3, -0.2, -0.159, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 1.0])
+
     scan = stepperMotorCtrl.ScanController(
         mokuWGChannel=2,
         commandSleepTime=1,
@@ -36,12 +35,16 @@ if __name__=='__main__':
     # Turn on the base high voltage
     scan.moku.setBaseHV(1, 1) # Default to 1kV bias on channel 1
     scan_times = scan.scanTravelDist / np.abs(velocities)
-    scan_times[scan_times==np.inf] = scan_times.min()  # fix v=0 case
+    scan_times[scan_times==np.inf] = 100  # fix v=0 case
     daq_times = (scan_times * 0.9).astype(int)
     print('\nTotal scanning time (s): ', scan_times.sum(), '\n')
     print('\nTotal DAQ time (s): ', daq_times.sum(), '\n')
     for i, vel in enumerate(velocities):
+        # if we plan to scan a negative velocity,
+        # we want to start scan-distance closer to source
         print(f'initiating scan at {vel} mm/s')
+        if vel < 0:
+            scan.quickReturn(vel)
         tScan = scan_times[i]
         print(f'scanning for {tScan} seconds')
         start_time = time.time()
@@ -51,9 +54,8 @@ if __name__=='__main__':
         while time.time() < (start_time + tScan):
             time.sleep(1)
         scan.stopMotion()
-        scan.step(
-            -1 * scan.returnVelocity * np.sign(vel),
-            scan.scanTravelDist, 
-            2
-        )
-    print('scan done')
+        # if we just scanned a negative velocity,
+        # we want to return
+        if vel > 0:
+            scan.quickReturn(vel)
+    print('\nSCAN COMPLETE\n')
