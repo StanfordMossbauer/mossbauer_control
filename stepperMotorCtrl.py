@@ -72,6 +72,7 @@ class mokuGO:
         Status message.
         '''
         self.osc = Oscilloscope(self.ip, force_connect=True)
+        enable = False
         if Vout:
             enable = True
         self.osc.set_power_supply(
@@ -256,7 +257,7 @@ class DFR1507A:
         '''
         Function to ENABLE drive to the motor.
         '''
-        GPIO.output(self.AW_OFF,GPIO.HIGH)
+        GPIO.output(self.AW_OFF, GPIO.HIGH)
         print(f"ENABLED current to all windings...")
         return()
 
@@ -290,7 +291,6 @@ class ScanController:
                     logging.FileHandler(logfile),
                     logging.StreamHandler()
                 ],
-                #filemode='a'
                 )
         log = logging.getLogger('scanlog')
         sys.stdout = StreamToLogger(log, logging.INFO)
@@ -312,6 +312,14 @@ class ScanController:
         sleep(self.commandSleepTime)
         sleep(tStep)
         self.stopMotion()
+        return
+
+    def quickReturn(self, vel):
+        self.step(
+            -1 * self.returnVelocity * np.sign(vel),
+            self.scanTravelDist, 
+            2
+        )
         return
         
     def scan(self, vel):
@@ -354,4 +362,3 @@ if __name__=='__main__':
     scan = ScanController()
     # Turn on the base high voltage
     scan.moku.setBaseHV(1, 1) # Default to 1kV bias on channel 1
-    scan.scan(0.2)
