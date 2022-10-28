@@ -2,6 +2,7 @@
 
 ### Installation
 ```
+cd dpp-readout
 make
 ```
 

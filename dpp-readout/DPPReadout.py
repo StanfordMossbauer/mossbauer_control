@@ -9,6 +9,7 @@ key_map = {
     'start': 's',
     'quit': 'q',
     'count': 'n',
+    'histogram': 'h',
 }
 
 class DPPReadout:
@@ -25,8 +26,7 @@ class DPPReadout:
         return
 
     def close(self):
-        """Stop current acquisition, quit the program, end the process
-        """
+        """Stop current acquisition, quit the program, end the process"""
         if self.process.isalive():
             print('Closing child process.')
             self.send(key_map['stop'])
@@ -38,14 +38,12 @@ class DPPReadout:
         return
 
     def checkalive(self):
-        """Make sure we haven't closed the program
-        """
+        """Make sure we haven't closed the program"""
         assert self.process.isalive(), 'Child process closed!'
         return
 
     def expect(self, exp):
-        """Expect a specified output string, close if not, print if asked
-        """
+        """Expect a specified output string, close if not, print if asked"""
         try:
             self.process.expect(exp, timeout=1)
         except:
@@ -57,8 +55,7 @@ class DPPReadout:
         return
 
     def send(self, line, expect_string=None):
-        """Send arbitrary line to dpp-readout, optionally expecting output
-        """
+        """Send arbitrary line to dpp-readout, optionally expecting output"""
         self.checkalive()
         self.process.send(line)
         if expect_string is not None:
@@ -66,7 +63,8 @@ class DPPReadout:
         return
 
     def start(self):
-        self.send(key_map['start'], 'Readout Rate')
+        # TODO: add expect string
+        self.send(key_map['start'])
         return
 
     def stop(self):
@@ -77,23 +75,15 @@ class DPPReadout:
         """Acquire for fixed time
         TODO: stream readout rate
         """
-        max_time = 100
-        cycles = int(time_s / max_time)
-        remainder = time_s % max_time
-        for i in range(cycles):
-            self.start()
-            time.sleep(max_time)
-            self.stop()
-            self.update_count()
         self.start()
-        time.sleep(remainder)
+        self.send('r')
+        time.sleep(time_s)
         self.stop()
         self.update_count()
         return
 
     def update_count(self):
-        """Update the total count
-        """
+        """Update the total count"""
         self.send(key_map['count'], r'[0-9]+')
         assert 'Total Count: ' in str(self.process.before), 'Count failure!'
         self.count = int(self.process.after)
@@ -103,14 +93,4 @@ class DPPReadout:
 if __name__=='__main__':
     verbose = False
     config_file = 'co57_config'
-
     digi = DPPReadout(config_file, verbose=verbose)
-    digi.start()
-    time.sleep(90)
-    digi.stop()
-    digi.update_count()
-    digi.start()
-    time.sleep(90)
-    digi.stop()
-    digi.update_count()
-    print(digi.count)
