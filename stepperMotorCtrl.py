@@ -153,6 +153,7 @@ class DFR1507A:
         MAX_FREQ = 500e3    # Don't pulse faster than this. Controller technically can handle up to 1MHz.
 
         self.__dict__.update(locals())
+        # TODO: this stuff is making errors every time
         # Clean up any residual connections
         GPIO.cleanup()
         # Setup the pins...
