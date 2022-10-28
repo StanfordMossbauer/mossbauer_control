@@ -304,7 +304,6 @@ int main(int argc, char *argv[])
         Params[b].PulsePolarity = DPPcfg.PulsePolarity; // Pulse Polarity (this parameter can be individual)
         Params[b].GWn = DPPcfg.GWn;
 		for (write_n = 0; write_n < Params[b].GWn; write_n++) {
-            printf("hi");
             Params[b].GWaddr[write_n] = DPPcfg.GWaddr[write_n];
             Params[b].GWdata[write_n] = DPPcfg.GWdata[write_n];
             Params[b].GWmask[write_n] = DPPcfg.GWmask[write_n];
@@ -491,7 +490,8 @@ int main(int argc, char *argv[])
         CurrentTime = get_time();
         ElapsedTime = CurrentTime - PrevRateTime; /* milliseconds */
         if (ElapsedTime > 1000) {
-            system(CLEARSCR);
+            if (0) {
+            //system(CLEARSCR);
             PrintInterface();
             printf("Readout Rate=%.2f MB\n", (float)Nb/((float)ElapsedTime*1048.576f));
             for(b=0; b<MAXNB; b++) {
@@ -504,6 +504,7 @@ int main(int argc, char *argv[])
                     TrgCnt[b][i]=0;
                     PurCnt[b][i]=0;
                 }
+            }
             }
             Nb = 0;
             PrevRateTime = CurrentTime;
