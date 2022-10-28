@@ -1,5 +1,6 @@
-ReadoutTest/build/
-ReadoutTest/bin/
+__pycache__/
+dpp-readout/build/
+dpp-readout/bin/
 *.o
 *.txt
 *.swp
