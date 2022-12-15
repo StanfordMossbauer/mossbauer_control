@@ -24,7 +24,7 @@ def remote_timed_daq(time_s, velocity, name, high_e=False):
     return
 
 if __name__=='__main__':
-    name = '20221213_1544_alpha'
+    name = '20221215_1611_alpha'
     high_e = False  # set True for 122 keV config
     iterate = True
     velocities = np.array([-1.0, -0.8, -0.6, -0.5, -0.4, -0.3, -0.2, -0.159, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0])
@@ -33,7 +33,7 @@ if __name__=='__main__':
     velocities[::2] = velval
     velocities[1::2] = -1*velval
     velocities = np.array([-0.5, -0.2, -0.1, -0.159, 0.0, 0.1, 0.2])
-    velocities = np.linspace(-5, 5, 101)
+    #velocities = np.linspace(-5, 5, 101)
     #velocities = np.array([-1.0, -0.8, -0.6, -0.5, -0.4, -0.3, -0.2, -0.159, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0])
     print(velocities)
 
@@ -68,29 +68,28 @@ if __name__=='__main__':
     print(scan_times)
     full_scan_start = time.time()
     hours_elapsed = 0
-    while 1:
-        for i, vel in enumerate(velocities):
-            for j in range(vel_iter_map[vel]):
-                # if we plan to scan a negative velocity,
-                # we want to start scan-distance closer to source
-                print(f'initiating scan at {vel} mm/s')
-                if vel < 0:
-                    scan.quickReturn(vel)
-                tScan = scan_times[i]
-                print(f'scanning for {tScan} seconds')
-                start_time = time.time()
-                scan.start_step(vel)
-                print('sending DAQ command via ssh')
-                remote_timed_daq(daq_times[i], vel, name, high_e)
-                while time.time() < (start_time + tScan):
-                    time.sleep(0.001)
-                scan.stopMotion()
-                # if we just scanned a negative velocity,
-                # we want to return
-                if vel > 0:
-                    scan.quickReturn(vel)
-            if int((time.time() - full_scan_start)/3600) > hours_elapsed:
-                scan.resetZeroPosition()
-                hours_elapsed += 1
-                print('RESETTING POSITION, HOURS ELAPSED:', hours_elapsed)
-        print('\nSCAN COMPLETE\n')
+    for i, vel in enumerate(velocities):
+        for j in range(vel_iter_map[vel]):
+            # if we plan to scan a negative velocity,
+            # we want to start scan-distance closer to source
+            print(f'initiating scan at {vel} mm/s')
+            if vel < 0:
+                scan.quickReturn(vel)
+            tScan = scan_times[i]
+            print(f'scanning for {tScan} seconds')
+            scan.start_step(vel)
+            start_time = time.time()
+            print('sending DAQ command via ssh')
+            remote_timed_daq(daq_times[i], vel, name, high_e)
+            while time.time() < (start_time + tScan):
+                time.sleep(0.001)
+            scan.stopMotion()
+            # if we just scanned a positive velocity,
+            # we want to return
+            if vel > 0:
+                scan.quickReturn(vel)
+        if int((time.time() - full_scan_start)/3600) > hours_elapsed:
+            scan.resetZeroPosition(currentPosition=60)
+            hours_elapsed += 1
+            print('RESETTING POSITION, HOURS ELAPSED:', hours_elapsed)
+    print('\nSCAN COMPLETE\n')
