@@ -267,10 +267,11 @@ class ScanController:
     def __init__(self, **kwargs):
         default_config = dict(
             mokuWGChannel=2,
-            commandSleepTime=1,  # s
+            commandSleepTime=0,  # s
             scanTravelDist=40,  # mm
             returnVelocity=5,  # mm/s
             logfileName='scan.log',
+            fullLength=180,  # mm
         )
         for key, val in default_config.items():
             setattr(self, key, kwargs.get(key, val))
@@ -356,6 +357,19 @@ class ScanController:
         self.ctrl.AWoff()
         self.moku.PWMoff(self.mokuWGChannel)
         self.ctrl.setResolution(1)  # I think we want this...
+        return
+
+    def resetZeroPosition(self, **kwargs):
+        '''
+        Return all the way to starting position.
+        First move toward source by (kwarg currentPosition, 
+        defaults to full length), then move back by kwarg
+        startPosition (defaults to scanTravelDist plus a buffer cm)
+        '''
+        currentPosition = kwargs.get('currentPosition', self.fullLength)
+        startPosition = kwargs.get('startPosition', self.scanTravelDist + 10.)
+        self.step(self.returnVelocity, currentPosition)
+        self.step(-1*self.returnVelocity, startPosition)
         return
 
 
