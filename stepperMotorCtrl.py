@@ -153,15 +153,10 @@ class DFR1507A:
         MAX_FREQ = 500e3    # Don't pulse faster than this. Controller technically can handle up to 1MHz.
 
         self.__dict__.update(locals())
-        # TODO: this stuff is making errors every time
-        # Clean up any residual connections
-        GPIO.cleanup()
-        # Setup the pins...
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.DIR_SELECT, GPIO.OUT)
-        GPIO.setup(self.RES_SELECT, GPIO.OUT)
-        GPIO.setup(self.AW_OFF, GPIO.OUT)
-        # GPIO.setup(DRIVE, GPIO.OUT)
+
+        # connect to arduino
+        motor_ctrl_serial = serial.Serial("COM6", 1000000)  # TODO: make this kwarg
+        print(motor_ctrl_serial.readline())
 
         if self.vel/self.RES_1 > self.MAX_FREQ:
             print(f"You've requested a step frequency of {self.vel:.2f} Hz. Setting to {MAX_FREQ/1e3:.2f} kHz")
@@ -193,9 +188,9 @@ class DFR1507A:
         Nothing.
         '''
         if res==1:
-            GPIO.output(self.RES_SELECT, GPIO.HIGH)
+            motor_ctrl_serial.write('a')
         elif res==2:
-            GPIO.output(self.RES_SELECT, GPIO.LOW)
+            motor_ctrl_serial.write('b')
         else:
             print(f"You requested for {res}, please specify either 1 or 2.")
         self.RES=res
@@ -212,9 +207,9 @@ class DFR1507A:
             Direction of rotation. Must be "CW" or "CCW".
         '''
         if DIR=='CW':
-            GPIO.output(self.DIR_SELECT, GPIO.HIGH)
+            motor_ctrl_serial.write('c')
         elif DIR=='CCW':
-            GPIO.output(self.DIR_SELECT, GPIO.LOW)
+            motor_ctrl_serial.write('d')
         else:
             print(f"You requested for {DIR} rotation, please specify either 'CW' or 'CCW'.")
         self.DIR=DIR
@@ -244,23 +239,31 @@ class DFR1507A:
         else:
             self.fStep = vel/self.RES_2
         print(f"Setting velocity to {vel:.3f}mm/sec, stepping at {self.fStep:3f}Hz")
-        return()
+        return
     
     def AWoff(self):
         '''
         Function to DISABLE drive to the motor.
         '''
-        GPIO.output(self.AW_OFF,GPIO.LOW)
+        motor_ctrl_serial.write('f')
         print(f"CUT OFF current to all windings...")
-        return()
+        return
 
     def AWon(self):
         '''
         Function to ENABLE drive to the motor.
         '''
-        GPIO.output(self.AW_OFF, GPIO.HIGH)
+        motor_ctrl_serial.write('e')
         print(f"ENABLED current to all windings...")
-        return()
+        return
+    
+    def readCtrlState(self):
+        motor_ctrl_serial.write('?')
+        print(motor_ctrl_serial.readline())
+        return
+
+    def __del__(self):
+        motor_ctrl_serial.close()
 
 
 class ScanController:
