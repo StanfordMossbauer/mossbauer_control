@@ -1,7 +1,6 @@
 from cgitb import reset
 import numpy as np
-import RPi.GPIO as GPIO
-import pyvisa
+import serial
 from time import sleep
 import signal
 import sys, os
@@ -43,6 +42,7 @@ class mokuGO:
     we call it, which introduces ~10 seconds of deadtime. This should be improved.
     '''
     def __init__(self, ip:str):
+        print('trying')
         try:
             self.inst = WaveformGenerator(ip, force_connect=True)
             self.ip = ip
@@ -155,15 +155,15 @@ class DFR1507A:
         self.__dict__.update(locals())
 
         # connect to arduino
-        motor_ctrl_serial = serial.Serial("COM6", 1000000)  # TODO: make this kwarg
-        print(motor_ctrl_serial.readline())
+        self.arduino_serial = serial.Serial("/dev/ttyACM0", 1000000)  # TODO: make this kwarg
+        print(self.arduino_serial.readline())
 
         if self.vel/self.RES_1 > self.MAX_FREQ:
             print(f"You've requested a step frequency of {self.vel:.2f} Hz. Setting to {MAX_FREQ/1e3:.2f} kHz")
             self.fStep = self.MAX_FREQ
         else:
             self.fStep = self.vel/self.RES_1 # In Hz
-        GPIO.output(self.AW_OFF, GPIO.LOW) # By default, turn off drive
+        self.AWoff()
         return
         
 
@@ -188,9 +188,9 @@ class DFR1507A:
         Nothing.
         '''
         if res==1:
-            motor_ctrl_serial.write('a')
+            self.arduino_serial.write('a')
         elif res==2:
-            motor_ctrl_serial.write('b')
+            self.arduino_serial.write('b')
         else:
             print(f"You requested for {res}, please specify either 1 or 2.")
         self.RES=res
@@ -207,9 +207,9 @@ class DFR1507A:
             Direction of rotation. Must be "CW" or "CCW".
         '''
         if DIR=='CW':
-            motor_ctrl_serial.write('c')
+            self.arduino_serial.write('c')
         elif DIR=='CCW':
-            motor_ctrl_serial.write('d')
+            self.arduino_serial.write('d')
         else:
             print(f"You requested for {DIR} rotation, please specify either 'CW' or 'CCW'.")
         self.DIR=DIR
@@ -245,7 +245,7 @@ class DFR1507A:
         '''
         Function to DISABLE drive to the motor.
         '''
-        motor_ctrl_serial.write('f')
+        self.arduino_serial.write('f')
         print(f"CUT OFF current to all windings...")
         return
 
@@ -253,17 +253,17 @@ class DFR1507A:
         '''
         Function to ENABLE drive to the motor.
         '''
-        motor_ctrl_serial.write('e')
+        self.arduino_serial.write('e')
         print(f"ENABLED current to all windings...")
         return
     
     def readCtrlState(self):
-        motor_ctrl_serial.write('?')
-        print(motor_ctrl_serial.readline())
+        self.arduino_serial.write('?')
+        print(self.arduino_serial.readline())
         return
 
     def __del__(self):
-        motor_ctrl_serial.close()
+        self.arduino_serial.close()
 
 
 class ScanController:
@@ -276,11 +276,13 @@ class ScanController:
             logfileName='scan.log',
             fullLength=180,  # mm
         )
+        print('trying')
         for key, val in default_config.items():
             setattr(self, key, kwargs.get(key, val))
-        self.log_output(self.logfileName)
+        #self.log_output(self.logfileName)
+        print('trying')
 
-        self.moku = mokuGO(kwargs.get('mokuIP', '192.168.73.1'))
+        #self.moku = mokuGO(kwargs.get('mokuIP', '192.168.73.1'))
 
         self.ctrl = DFR1507A()
         self.stopMotion()
@@ -377,6 +379,7 @@ class ScanController:
 
 
 if __name__=='__main__':
+    print('starting')
     scan = ScanController()
     # Turn on the base high voltage
     scan.moku.setBaseHV(1, 1) # Default to 1kV bias on channel 1
