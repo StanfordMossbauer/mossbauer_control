@@ -5,6 +5,9 @@ int PLS_PIN = 11; //red wire, is not currently used in code
 int RS2_PIN = 12; //blue wire
 char serialchar = '\0';
 
+bool flagA = false;
+bool flagB = false;
+
 void setup() {
   // put your setup code here, to run once
   Serial.begin(1000000);
