@@ -3,7 +3,7 @@
 ### Installation
 ```
 cd dpp-readout
-make
+sudo make
 ```
 
 ### Usage
