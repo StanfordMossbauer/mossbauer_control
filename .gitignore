@@ -3,4 +3,7 @@ dpp-readout/build/
 dpp-readout/bin/
 *.o
 *.txt
+*.dat
+*.log
+*.hdf5
 *.swp
