@@ -9,8 +9,6 @@ Created on Fri Feb 17 17:07:08 2023
 import pyvisa
 import sys
 import atexit
-sys.path.append('/home/mossbauer_lab/ExperimentContrl')
-   
 
 class Agilent:
     '''
