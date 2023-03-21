@@ -12,7 +12,7 @@ key_map = {
     'histogram': 'h',
 }
 
-class DPPReadout:
+class CAEN:
     """Class to wrap dpp-readout and interface with digitizer.
     Code was adapted from the script caen_handler.py, which Chas
     wrote to interact with the wavedump software.

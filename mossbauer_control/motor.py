@@ -1,293 +1,49 @@
-from cgitb import reset
-import numpy as np
-import serial
-from time import sleep
-import signal
+import pyvisa
 import sys, os
-from moku.instruments import WaveformGenerator, Oscilloscope
-import configparser
-import atexit
+import numpy as np
 
-import logging
-
-class StreamToLogger(object):
-    """Fake file-like stream object that redirects writes to a logger instance.
-
-    from https://stackoverflow.com/questions/19425736/how-to-redirect-stdout-and-stderr-to-logger-in-python
-    """
-    def __init__(self, logger, level):
-       self.logger = logger
-       self.level = level
-       self.linebuf = ''
-       return
-
-    def write(self, buf):
-       for line in buf.rstrip().splitlines():
-          self.logger.log(self.level, line.rstrip())
-
-    def flush(self):
-        pass
+from mossbauer_control.instruments import Agilent, DFR1507A
+from mossbauer_control.utils import *
 
 
-# Establish a connection to a moku
-class mokuGO:
+class Motor:
     '''
-    Class object to interact with a moku GO.
-
-    Power Supply Channel 1 is used to generate the bias voltage to the PMT
-    AO Channel 2 is used for square wave with 50% duty cycle
-    to drive the stepper motor.
-
-    Unfortunately, the API seems to require us to reconnect to the Moku every time
-    we call it, which introduces ~10 seconds of deadtime. This should be improved.
+    
     '''
-    def __init__(self, ip:str):
-        print('trying')
-        try:
-            self.inst = WaveformGenerator(ip, force_connect=True)
-            self.ip = ip
-        except Exception as e:
-            print(e)
-            print(f'Unable to connect to Moku GO at {ip}')
-            sys.exit()
-        self.DUTY = 50           # Duty cycle
-        self.AMP = 5             # Amplitude of pulse
-        self.OFFSET = 2.5        # Makes a TTL like signal with the above amp
-        return
+    def __init__(self, agilent = "GPIB0::14::INSTR",arduino = "/dev/ttyACM1" ):
+        
+        self.motordrive = DFR1507A(arduino)
 
-    def setBaseHV(self, Vout:float, channel:int=1):
-        '''
-        DC voltage output to generate PMT HV with active base.
-
-        Parameters:
-        ------------
-        Vout: float
-            Desired control voltage [V]. HV is x1000.
-            set to 0 to turn off
-        channel: int
-            Desired channel to use. Defaults to 1.
-
-        Returns:
-        --------
-        Status message.
-        '''
-        self.osc = Oscilloscope(self.ip, force_connect=True)
-        enable = False
-        if Vout:
-            enable = True
-        self.osc.set_power_supply(
-            channel,
-            voltage=Vout,
-            current=0.1,
-            enable=enable
-        )
-        print(self.osc.get_power_supply(channel))
-        self.osc.relinquish_ownership()
-        self.inst = WaveformGenerator(self.ip, force_connect=True)  # reset API conn
-        return
-
-    def _setPWM(self, freq:float, channel: int=2):
-        '''
-        Turn on 50% duty cycle square wave with set frequency.
-
-        Parameters:
-        -------------
-        freq: float
-            Desired frequency.
-
-        Returns:
-        -------------
-        Status message.
-        '''
-        #self.inst = WaveformGenerator(self.ip, force_connect=True)
-        wftype = 'Off'
-        if freq:
-            wftype = 'Square'
-        self.inst.generate_waveform(
-            channel=channel,
-            type=wftype,
-            offset=self.OFFSET,
-            amplitude=self.AMP,
-            frequency=freq,
-            duty=self.DUTY,
-        )
-        print(self.inst.summary())
-        #self.inst.relinquish_ownership()
-        return
-
-    def PWMon(self, freq:float, channel: int=2):
-        ''' Turn off 50% duty cycle square wave with set frequency.
-        '''
-        self._setPWM(freq, channel)
-        return
-
-    def PWMoff(self, channel: int=2):
-        ''' Turn off 50% duty cycle square wave with set frequency.
-        '''
-        self._setPWM(0, channel)
-        return
+        self.motordrive.AWoff()
+        self.motordrive.setResolution(1)
+        self.motordrive.setDirection("CW")
         
 
-class DFR1507A:
-    '''
-    Initiates an instance of the DFR1507A driving a KR26.
-    '''
-    def __init__(self, DIR: str='CCW', RES: int=1, vel: float=0):
-        '''
-        Init function. 
+        self.siggen = Agilent(agilent)
 
-        Parameters:
-        ------------
-        DIR: str
-            Direction of motor rotation. Defaults to 'CCW'.
-            Must be either 'CCW' or 'CW'.
-        RES: int
+        self.siggen.mode = "SQU"
+        self.siggen.amplitude = 5
+        self.siggen.offset = -2.5
+        self.siggen.output = "ON"
 
-        '''
-        # ugly hardcoding
-        RES_1 = 2*0.00288/360 # (ball screw lead mm/rev) * (?) / 1rev
-        RES_2 = 2*0.009/360 # (ball screw lead mm/rev) * (?) / 1rev
-        DIR_SELECT = 24  # Direction select. 0=CW, 1=CCW
-        RES_SELECT = 16  # res select. 0=RS1, 1=RS2
-        AW_OFF = 25      # All windings off pin. 0=no drive. 1= regular drive
-        MAX_FREQ = 500e3    # Don't pulse faster than this. Controller technically can handle up to 1MHz.
+        self.motorSettings = {'velocity': 0, 'resolution': 1}
 
-        self.__dict__.update(locals())
+    def updateSettings(self):
 
-        # connect to arduino
-        self.arduino_serial = serial.Serial("/dev/ttyACM0", 1000000)  # TODO: make this kwarg
-        print(self.arduino_serial.readline())
+        self.motordrive.setResolution = self.resolution
 
-        if self.vel/self.RES_1 > self.MAX_FREQ:
-            print(f"You've requested a step frequency of {self.vel:.2f} Hz. Setting to {MAX_FREQ/1e3:.2f} kHz")
-            self.fStep = self.MAX_FREQ
+        if self.resolution == 1:
+            RES = 2*0.00288/360 # (ball screw lead mm/rev) * (?) / 1rev
         else:
-            self.fStep = self.vel/self.RES_1 # In Hz
-        self.AWoff()
-        return
-        
+            RES = 2*0.009/360 # (ball screw lead mm/rev) * (?) / 1rev
 
-    def cleanup(self):
-        '''
-        Re-initializes the GPIO pins and frees them. 
-        '''
-        GPIO.cleanup()
-        return()
-    
-    def setResolution(self, res: int):
-        '''
-        Funtion to select the resolution of steps, based on the RS1/2 dials on the DFR1507A.
-        
-        Parameters:
-        -----------
-        res: int
-            Resolution setting to use. Must be "1" or "2".
-
-        Returns:
-        ---------
-        Nothing.
-        '''
-        if res==1:
-            self.arduino_serial.write('a')
-        elif res==2:
-            self.arduino_serial.write('b')
+        if self.velocity>=0:
+            self.motordrive.setDirection('CCW')
         else:
-            print(f"You requested for {res}, please specify either 1 or 2.")
-        self.RES=res
-        print(f"Using resolution set by RS{self.RES}")
-        return
+            self.motordrive.setDirection('CW')
 
-    def setDirection(self, DIR: str):
-        '''
-        Function to select the direction of rotation.
-
-        Parameters:
-        -------------
-        DIR: str
-            Direction of rotation. Must be "CW" or "CCW".
-        '''
-        if DIR=='CW':
-            self.arduino_serial.write('c')
-        elif DIR=='CCW':
-            self.arduino_serial.write('d')
-        else:
-            print(f"You requested for {DIR} rotation, please specify either 'CW' or 'CCW'.")
-        self.DIR=DIR
-        print(f"Direction of rotation is {self.DIR}")
-        return
-
-    def setVelocity(self, vel: float):
-        '''
-        Function to set the linear velocity.
-
-        Parameters:
-        -------------
-        vel: float
-            Linear velocity in mm/s. A positive value results in CCW rotation, while a negative value results in CW rotation
-
-        Returns:
-        ----------
-        Nothing.
-        '''
-        if vel>0:
-            self.setDirection('CCW')
-        else:
-            self.setDirection('CW')
-        vel = abs(vel)
-        if self.RES==1:
-            self.fStep = vel/self.RES_1 # In Hz
-        else:
-            self.fStep = vel/self.RES_2
-        print(f"Setting velocity to {vel:.3f}mm/sec, stepping at {self.fStep:3f}Hz")
-        return
-    
-    def AWoff(self):
-        '''
-        Function to DISABLE drive to the motor.
-        '''
-        self.arduino_serial.write('f')
-        print(f"CUT OFF current to all windings...")
-        return
-
-    def AWon(self):
-        '''
-        Function to ENABLE drive to the motor.
-        '''
-        self.arduino_serial.write('e')
-        print(f"ENABLED current to all windings...")
-        return
-    
-    def readCtrlState(self):
-        self.arduino_serial.write('?')
-        print(self.arduino_serial.readline())
-        return
-
-    def __del__(self):
-        self.arduino_serial.close()
-
-
-class ScanController:
-    def __init__(self, **kwargs):
-        default_config = dict(
-            mokuWGChannel=2,
-            commandSleepTime=0,  # s
-            scanTravelDist=40,  # mm
-            returnVelocity=5,  # mm/s
-            logfileName='scan.log',
-            fullLength=180,  # mm
-        )
-        print('trying')
-        for key, val in default_config.items():
-            setattr(self, key, kwargs.get(key, val))
-        #self.log_output(self.logfileName)
-        print('trying')
-
-        #self.moku = mokuGO(kwargs.get('mokuIP', '192.168.73.1'))
-
-        self.ctrl = DFR1507A()
-        self.stopMotion()
-        atexit.register(self.stopMotion)
-        return
+        self.siggen.frequency = np.abs(self.velocity/RES)
+        #print(self.velocity, RES)
 
 
     def log_output(self, logfile):
@@ -304,78 +60,54 @@ class ScanController:
         sys.stderr = StreamToLogger(log, logging.ERROR)
         return
 
-    def start_step(self, vel, res=1):
-        self.ctrl.setResolution(res)
-        self.ctrl.setVelocity(vel)
-        self.moku.PWMon(self.ctrl.fStep, self.mokuWGChannel)
-        self.ctrl.AWon()
-        return
-
-    def step(self, vel, dist, res=1):
-        """Step for dist mm at vel mm/s
-        """
-        tStep = dist/np.abs(vel)
-        self.start_step(vel, res)
-        sleep(self.commandSleepTime)
-        sleep(tStep)
-        self.stopMotion()
-        return
-
-    def quickReturn(self, vel):
-        self.step(
-            -1 * self.returnVelocity * np.sign(vel),
-            self.scanTravelDist, 
-            2
-        )
-        return
         
-    def scan(self, vel):
-        '''
-        Initiate a scan at some velocity.
+    @property
+    def velocity(self):
+        return self.motorSettings['velocity']
 
-        Parameters:
-        --------------
-        vel: float
-            Velocity in mm/sec.
-
-        Returns:
-        ---------
-        Nothing.
-        
-        '''
-        self.step(vel, self.scanTravelDist)
-        # And then go back to where we started.
-        self.step(
-            -1 * self.returnVelocity * np.sign(vel),
-            self.scanTravelDist, 
-            2
-        )
+            
+    @velocity.setter
+    def velocity(self, value):
+        self.motorSettings['velocity'] = value
+        self.updateSettings()
+        return
+    
+    @property
+    def resolution(self):
+        return self.motorSettings['resolution']
+            
+    @resolution.setter
+    def resolution(self, value): 
+        self.motorSettings['resolution'] = value
+        self.updateSettings()
+        return
+    
+    def start(self):
+        self.motordrive.AWon()
         return
 
-    def stopMotion(self):
-        '''
-        Function to stop all motion and turn off TTL output from the function generator.
-        Returns:
-        ---------
-        Nothing.
-        '''
-        self.ctrl.AWoff()
-        self.moku.PWMoff(self.mokuWGChannel)
-        self.ctrl.setResolution(1)  # I think we want this...
+    def stop(self):
+        self.motordrive.AWoff()
         return
 
-    def resetZeroPosition(self, **kwargs):
-        '''
-        Return all the way to starting position.
-        First move toward source by (kwarg currentPosition, 
-        defaults to full length), then move back by kwarg
-        startPosition (defaults to scanTravelDist plus a buffer cm)
-        '''
-        currentPosition = kwargs.get('currentPosition', self.fullLength)
-        startPosition = kwargs.get('startPosition', self.scanTravelDist + 10.)
-        self.step(self.returnVelocity, currentPosition)
-        self.step(-1*self.returnVelocity, startPosition)
-        return
+    @property
+    def flagA(self):
+        return self.motordrive.readFlagState()[0]
+
+    @property
+    def flagB(self):
+        return self.motordrive.readFlagState()[1]
+    
+    def close(self):
+        self.siggen.close()
+        self.motordrive.close()
+    
+    def __del__(self):
+
+        self.siggen.output = "OFF"
+        self.motordrive.AWoff()
+        self.motordrive.__del__()
+        self.siggen.__del__()
 
 
 if __name__=='__main__':

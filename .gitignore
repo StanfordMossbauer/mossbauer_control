@@ -2,7 +2,6 @@ __pycache__/
 dpp-readout/build/
 dpp-readout/bin/
 *.o
-*.txt
 *.dat
 *.log
 *.hdf5
