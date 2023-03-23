@@ -5,8 +5,9 @@ import os
 from mossbauer_control.motor import Motor
 from mossbauer_control.instruments import CAEN, TDS754A
 
+
 motor = Motor( agilent = "GPIB0::14::INSTR",arduino = "/dev/ttyACM0")
-caen = CAEN("/home/mossbauer_lab/ExperimentControl/caen/DigitizerAcquisition/dpp-readout/co57_config")
+caen = CAEN("/home/mossbauer_lab/mossbauer_control/caen_configs/co57_config")
 TDS = TDS754A(resource = "GPIB0::13::INSTR") # TDS is Techtronix Digital Scope
     
 print(TDS.read_identity())
@@ -17,7 +18,7 @@ motor.resolution = 1
 integration_time = 3600*1
 stroke_length = 50 #mm
 
-data_file = '20230320_co57_1.dat'
+data_file = 'test.dat'
 
 if not os.path.exists(data_file):
     with open(data_file, 'w') as f:
@@ -26,7 +27,7 @@ if not os.path.exists(data_file):
 
 #calculate velocity list
 velocity_list = np.array([0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4,0.4,0.4,0.4,0.5,0.5,0.5,0.5,0.5])#np.arange(0.01,0.5,0.02)               #only positive
-velocity_list = np.arange(0.1,2,0.1)
+velocity_list = np.arange(1,2,0.5)
 sweep_time_list = []
 count_list = []
 actual_velocity_list = []

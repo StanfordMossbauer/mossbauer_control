@@ -2,6 +2,8 @@ import sys, os
 import pexpect
 import time
 from os.path import join
+import termplotlib as tpl
+import numpy as np
 import atexit
 
 key_map = {
@@ -89,8 +91,24 @@ class CAEN:
         self.count = int(self.process.after)
         return
 
+    def histogram(self, readfile = r'/home/mossbauer_lab/mossbauer_control/Histo_0_0.txt', savefile = r'/home/mossbauer_lab/Data/Hist', skim_lim_lower = 0, skim_lim_upper = 4094):
+        "creates the histogram as Histo_0_0.txt, reads prints it in terminal and saves it with new name"
+        self.send('h')
+        file0 = (readfile)
+        hist = np.loadtxt(file0)
+        np.savetxt(savefile, hist, fmt='%s')
+        fig = tpl.figure()
+        fig.plot(np.arange(skim_lim_lower, skim_lim_upper), hist[skim_lim_lower:skim_lim_upper])
+        fig.show()
+        return hist    
+        
+        
 
 if __name__=='__main__':
     verbose = False
-    config_file = 'co57_config'
-    digi = DPPReadout(config_file, verbose=verbose)
+    config_file = 'caen_configs/co57_config'
+    integration_time = 10
+    digi = CAEN(config_file, verbose=verbose)
+    digi.timed_acquire(integration_time)
+    print('rate is {:.2f} Hz'.format(digi.count/integration_time))
+    h = digi.histogram(filename = 'Histogram.txt',skim_lim_lower = 500,skim_lim_upper = 1250)
