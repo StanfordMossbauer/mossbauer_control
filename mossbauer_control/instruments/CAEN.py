@@ -94,6 +94,7 @@ class CAEN:
     def histogram(self, readfile = r'/home/mossbauer_lab/mossbauer_control/Histo_0_0.txt', savefile = r'/home/mossbauer_lab/Data/Hist', skim_lim_lower = 0, skim_lim_upper = 4094):
         "creates the histogram as Histo_0_0.txt, reads prints it in terminal and saves it with new name"
         self.send('h')
+        time.sleep(0.1) #wait for file to update!
         file0 = (readfile)
         hist = np.loadtxt(file0)
         np.savetxt(savefile, hist, fmt='%s')

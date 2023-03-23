@@ -18,7 +18,7 @@ motor.resolution = 1
 integration_time = 3600*1
 stroke_length = 50 #mm
 
-data_file = 'test.dat'
+data_file = 'home/mossbauer_lab/Data/20230322_alphaFe.dat'
 
 if not os.path.exists(data_file):
     with open(data_file, 'w') as f:
@@ -28,6 +28,7 @@ if not os.path.exists(data_file):
 #calculate velocity list
 velocity_list = np.array([0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4,0.4,0.4,0.4,0.5,0.5,0.5,0.5,0.5])#np.arange(0.01,0.5,0.02)               #only positive
 velocity_list = np.arange(1,2,0.5)
+velocity_list = list(np.arange(3,4,0.01))*50
 sweep_time_list = []
 count_list = []
 actual_velocity_list = []
