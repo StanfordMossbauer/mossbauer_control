@@ -190,7 +190,7 @@ int GetECnt(int b, int ch, int ECnt)
 	/*
 	* This function counts the bin contents of the histogram
 	*/
-    printf("Total Count: %d\n", ECnt);
+    printf("Channel %d Count: %d\n", ch, ECnt);
 
     return 0;
 }

@@ -445,12 +445,18 @@ int main(int argc, char *argv[])
                     for (ch = 0; ch < MaxNChannels; ch++)
                         if (ECnt[b][ch] != 0) 
                             SaveHistogram("Histo", b, ch, EHisto[b][ch]);  // Save Histograms to file for each board
+            if (isdigit(c))
+                for (b = 0; b < MAXNB; b++)
+                    {
+                    // Spit out total count
+                    int ch = c - '0';
+                    GetECnt(b, ch, ECnt[b][ch]);
+                    }
             if (c == 'n')
                 for (b = 0; b < MAXNB; b++)
                     // Spit out total count
                     for (ch = 0; ch < MaxNChannels; ch++)
-                        if (ECnt[b][ch] != 0) 
-                            GetECnt(b, ch, ECnt[b][ch]);
+                        GetECnt(b, ch, ECnt[b][ch]);
             if (c == 'w')
                 for (b = 0; b < MAXNB; b++)
                     for (ch = 0; ch < MaxNChannels; ch++)
@@ -509,7 +515,6 @@ int main(int argc, char *argv[])
             }
             Nb = 0;
             PrevRateTime = CurrentTime;
-            //printf("\n\n");
         }
         
         /* Read data from the boards */
