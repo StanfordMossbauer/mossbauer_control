@@ -258,6 +258,8 @@ int main(int argc, char *argv[])
     /* *************************************************************************************** */
     /* Set Parameters                                                                          */
     /* *************************************************************************************** */
+    /* This is setting the values of Params and DPPParams which will be used to program the    */
+    /* digitizer. These will come from the config.                                             */
     memset(&Params, 0, MAXNB * sizeof(DigitizerParams_t));
     memset(&DPPParams, 0, MAXNB * sizeof(CAEN_DGTZ_DPP_PHA_Params_t));
 	for (b = 0; b < MAXNB; b++) {
@@ -267,7 +269,6 @@ int main(int argc, char *argv[])
 		/****************************\
 		* Communication Parameters   *
 		\****************************/
-		// TODO: (Some of) this should come from config
 		// Direct USB connection
 		Params[b].LinkType = CAEN_DGTZ_USB;  // Link Type
 		Params[b].VMEBaseAddress = 0;  // For direct USB connection, VMEBaseAddress must be 0
@@ -490,8 +491,8 @@ int main(int argc, char *argv[])
         CurrentTime = get_time();
         ElapsedTime = CurrentTime - PrevRateTime; /* milliseconds */
         if (ElapsedTime > 1000) {
-            if (0) {
-            //system(CLEARSCR);
+            if (DPPcfg.VerboseMode) {
+            system(CLEARSCR);
             PrintInterface();
             printf("Readout Rate=%.2f MB\n", (float)Nb/((float)ElapsedTime*1048.576f));
             for(b=0; b<MAXNB; b++) {
@@ -508,7 +509,7 @@ int main(int argc, char *argv[])
             }
             Nb = 0;
             PrevRateTime = CurrentTime;
-            printf("\n\n");
+            //printf("\n\n");
         }
         
         /* Read data from the boards */

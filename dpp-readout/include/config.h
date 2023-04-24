@@ -77,6 +77,7 @@ typedef struct {
     CAEN_DGTZ_PulsePolarity_t PulsePolarity;
     CAEN_DGTZ_DPP_AcqMode_t AcqMode;
     int EnergySkim;
+    int VerboseMode;
     uint32_t Threshold[MAX_SET];
     uint32_t TrapRiseTime[MAX_SET];
     uint32_t TrapFlatTop[MAX_SET];
