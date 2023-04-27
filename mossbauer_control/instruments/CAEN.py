@@ -5,6 +5,7 @@ from os.path import join
 import termplotlib as tpl
 import numpy as np
 import atexit
+import re
 
 key_map = {
     'stop': 'S',
@@ -21,6 +22,8 @@ class CAEN:
     """
     def __init__(self, config_file='', verbose=False):
         self.verbose = verbose
+        self.nchannels = 8
+        self.count = np.zeros(self.nchannels, dtype=int)
         self.process = pexpect.spawn(f'dpp-readout {config_file}')
         self.expect('Save waveforms to file\r\n\r\n\r\n')
         atexit.register(self.close)  # close self if python process dies
@@ -50,6 +53,8 @@ class CAEN:
             self.process.expect(exp, timeout=1)
         except:
             print("expect() failed!")
+            print(self.process.before.decode('ascii'), end='')
+            print(self.process.after.decode('ascii'), end='')
             self.close()
         if self.verbose:
             print(self.process.before.decode('ascii'), end='')
@@ -86,9 +91,15 @@ class CAEN:
 
     def update_count(self):
         """Update the total count"""
-        self.send(key_map['count'], r'[0-9]+')
-        assert 'Total Count: ' in str(self.process.before), 'Count failure!'
-        self.count = int(self.process.after)
+        self.send(key_map['count'])
+        pattern = 'Channel ([0-9]) Count: ([0-9]*)'
+        repattern = re.compile(pattern)
+        for i in range(self.nchannels):
+            self.send('%d' % i, pattern)
+            line = self.process.after
+            m = repattern.search(str(line))
+            assert int(m.group(1))==i, line
+            self.count[i] = int(m.group(2))
         return
 
     def histogram(self, readfile = r'/home/mossbauer_lab/mossbauer_control/Histo_0_0.txt', savefile = r'/home/mossbauer_lab/Data/Hist', skim_lim_lower = 0, skim_lim_upper = 4094):
@@ -112,4 +123,4 @@ if __name__=='__main__':
     digi = CAEN(config_file, verbose=verbose)
     digi.timed_acquire(integration_time)
     print('rate is {:.2f} Hz'.format(digi.count/integration_time))
-    h = digi.histogram(filename = 'Histogram.txt',skim_lim_lower = 500,skim_lim_upper = 1250)
+    h = digi.histogram(savefile=sys.argv[1], skim_lim_lower=500, skim_lim_upper=1250)
