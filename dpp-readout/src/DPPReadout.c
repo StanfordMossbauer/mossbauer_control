@@ -254,6 +254,8 @@ int main(int argc, char *argv[])
     memset(DoSaveWave, 0, MAXNB*MaxNChannels*sizeof(int));
     for (i = 0; i < MAXNBITS; i++)
         BitMask |= 1<<i; /* Create a bit mask based on number of bits of the board */
+    
+    printf("Acquisition Stopped for Board %d\n", BitMask);
 
     /* *************************************************************************************** */
     /* Set Parameters                                                                          */
@@ -466,6 +468,8 @@ int main(int argc, char *argv[])
                     CAEN_DGTZ_SWStopAcquisition(handle[b]); 
                     printf("Restarted\n");
                     CAEN_DGTZ_ClearData(handle[b]);
+                    for (ch = 0; ch < MaxNChannels; ch++)
+                        ECnt[b][ch] = 0;
                     CAEN_DGTZ_SWStartAcquisition(handle[b]);
                 }
             }

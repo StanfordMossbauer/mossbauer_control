@@ -102,7 +102,7 @@ class CAEN:
             self.count[i] = int(m.group(2))
         return
 
-    def histogram(self, readfile = r'/home/mossbauer_lab/mossbauer_control/Histo_0_0.txt', savefile = r'/home/mossbauer_lab/Data/Hist', skim_lim_lower = 0, skim_lim_upper = 4094):
+    def histogram(self, readfile = r'Histo_0_0.txt', savefile = r'/home/mossbauer_lab/Data/Hist', skim_lim_lower = 0, skim_lim_upper = 4096):
         "creates the histogram as Histo_0_0.txt, reads prints it in terminal and saves it with new name"
         self.send('h')
         time.sleep(0.1) #wait for file to update!
@@ -122,5 +122,4 @@ if __name__=='__main__':
     integration_time = 10
     digi = CAEN(config_file, verbose=verbose)
     digi.timed_acquire(integration_time)
-    print('rate is {:.2f} Hz'.format(digi.count/integration_time))
-    h = digi.histogram(savefile=sys.argv[1], skim_lim_lower=500, skim_lim_upper=1250)
+    print(digi.count)

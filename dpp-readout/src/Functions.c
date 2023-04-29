@@ -113,7 +113,7 @@ int SaveHistogram(char *basename, int b, int ch, uint32_t *EHisto)
     fh = fopen(filename, "w");
     if (fh == NULL)
 		return -1;
-    for(i=0; i<(1<<12); i++) {
+    for(i=0; i<(1<<14); i++) {
 		fprintf(fh, "%d\n", EHisto[i]);
 	}
     fclose(fh);
