@@ -1,64 +1,25 @@
 
 import time
+import os
 from mossbauer_control.instruments import CAEN
 from mossbauer_control.motor import Motor
 
-motor = Motor( agilent = "GPIB0::14::INSTR",arduino = "/dev/ttyACM1")
 caen = CAEN("/home/mossbauer_lab/mossbauer_control/caen_configs/co57_config")
+directory = "/home/mossbauer_lab/Data/{}_Histograms/".format(time.strftime("%Y%m%d"))
 
-savedir = r'/home/mossbauer_lab/Data/'
-
+if not os.path.isdir(directory): os.mkdir(directory)
+    
+absorber = 'FeCy'
 integration_time = 100
+detector_distance = 19 #in
 
-velocity = 5  #only positive velocities!
-
-if velocity == 0:
-	total_time = integration_time
-	digi.timed_acquire(integration_time)
-
-else:
-	total_time = 0
-
-	while total_time < integration_time:
-		motor.velocity = velocity
-		motor.start()
-
-		while motor.flagA is False:
-			 	time.sleep(0.01)
-
-		caen.start()
-
-		t1 = time.time()
-		while motor.flagB is True:
-		    time.sleep(0.01)       
-		total_time += (time.time()-t1)
-
-		caen.stop()
-
-		time.sleep(0.1)
-		motor.stop()
-
-		#now go backwards same velocity
-
-		motor.velocity = -5
-
-		motor.start()
-		while motor.flagA is True:
-		    time.sleep(0.01)
-		            
-		time.sleep(0.1)
-		motor.stop()
-
-
+print('integrating {} seconds, will finish at {}'.format(integration_time, datetime.now() + timedelta(seconds=integration_time)))
+caen.timed_acquire(integration_time)
 caen.update_count()
 
-
-
-filename  = 'Hist_skim_550_1200_v_{:.2f}_t_{:.1f}_FeCy.txt'.format(velocity, total_time)
+filename  = 'Hist_{}_{}s_{}in.txt'.format(absorber, total_time,detector_distance)
 
 print('rate is {:.2f} Hz'.format(caen.count/total_time))
-h = caen.histogram( savefile = savedir+filename, skim_lim_lower = 500, skim_lim_upper = 1250)
-
+h = caen.histogram( readfile = 'Histo_0_0.txt',savefile = directory+filename)
 
 caen.close()
-motor.close()

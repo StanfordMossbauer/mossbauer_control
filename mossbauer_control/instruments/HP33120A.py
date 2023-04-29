@@ -5,13 +5,14 @@ Created on Fri Feb 17 17:07:08 2023
 
 @author: mossbauer_lab
 """
+#MANUAL
+#http://www.hit.bme.hu/~papay/edu/Lab/33120A_Manual.pdf
 
 import pyvisa
 import sys
 import atexit
-   
 
-class Agilent:
+class HP33120A:
     '''
     Initiates an instance of the DFR1507A driving a KR26.
     '''
@@ -51,15 +52,6 @@ class Agilent:
         self.device.write("VOLT:OFFS {:f}".format(value))
         return
     
-    @property
-    def output(self):
-        return self.device.query("OUTPUT?")[:-1]
-            
-    @output.setter
-    def output(self, value):
-        # value can be "ON" or "OFF"
-        self.device.write("OUTPUT {}".format(value))
-        return
     
     @property
     def frequency(self):
@@ -74,14 +66,13 @@ class Agilent:
     
     @property
     def burststate(self):
-        return self.device.query("BURST:STATE?")[:-1]
+        return self.device.query("BM:STATE?")[:-1]
 
     @burststate.setter
     def burststate(self, value):
         #value = 1  -> on  value = 0  -> off
-        self.device.write("BURST:STATE {:d}".format(value))
+        self.device.write("BM:STATE {:d}".format(value))
         return
-
 
 
     @property
@@ -97,21 +88,23 @@ class Agilent:
     
     @property
     def burstcycles(self):
-        return self.device.query("BURST:NCYCLES?")[:-1]
+        return self.device.query("BM:NCYCLES?")[:-1]
 
     @burstcycles.setter
     def burstcycles(self, value):
-        self.device.write("BURST:NCYCLES {:d}".format(value))
+        self.device.write("BM:NCYCLES {:d}".format(value))
         return
+
 
     @property
     def burstphase(self):
-        return self.device.query("BURST:PHASE?")[:-1]
+        return self.device.query("BM:PHASE?")[:-1]
 
     @burstphase.setter
     def burstphase(self, value):
-        self.device.write("BURST:PHASE {:d}".format(value))
+        self.device.write("BM:PHASE {:d}".format(value))
         return
+
 
     @property
     def triggersource(self):
@@ -123,6 +116,7 @@ class Agilent:
         self.device.write("TRIGger:SOURce {}".format(value))
         return
 
+
     @property
     def triggerslope(self):
         return self.device.query("TRIGger:SLOPe?")[:-1]
@@ -133,23 +127,27 @@ class Agilent:
         self.device.write("TRIGger:SLOPe {}".format(value))
         return
 
-    
+
     def trigger(self):
         self.device.write('*TRG')
         return
 
+
+     
     def close(self):
         self.device.output = "OFF"
         self.device.close()
         return
-        
+
+    
 
 if __name__ == "__main__":
-    siggen = Agilent("GPIB::14::INSTR")
+    siggen = Agilent("GPIB::15::INSTR")
     siggen.frequency = 1000
     siggen.__del__()
     
     
 
+    
     
     
