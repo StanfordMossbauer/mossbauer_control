@@ -9,12 +9,14 @@ import matplotlib.pylab as plt
 from tqdm import tqdm
 
 directory = "/home/mossbauer/Data/{}_scan/".format(time.strftime("%Y%m%d"))
-data_file = directory + 'Fe0004_0.5_mms_0.01_mms_19in.dat'
+#data_file = directory + 'Fe0004_0.5_mms_0.01_mms_19in.dat'
 #data_file = directory + 'BeBlankUnpolished_1_mms_0.05_mms_19in.dat'
-data_file = directory + 'Fe0004_1_mms_0.05_mms_19in.dat'
-data_file = directory + 'Fe0004_1_mms_0.05_mms_19in_cardboard.dat'
-data_file = directory + 'test_run4.dat'
-data_file = directory + 'FeCy_0.3_mms_0.04_mms_0.6-5in.dat'
+#data_file = directory + 'Fe0004_1_mms_0.05_mms_19in.dat'
+#data_file = directory + 'Fe0004_1_mms_0.05_mms_19in_cardboard.dat'
+data_file = directory + 'FeCy_0.6_mms_9steps_0.6-17in.dat'
+#data_file = directory + 'test_run7.dat'
+
+protect_overwrite = True#False
 
 
 
@@ -25,13 +27,16 @@ Xmin = 0e-3
 
 
 
-frequencies = np.linspace(0, 0.4, 11)#[np.linspace(0,0.5,51)[21]]#np.ones(5)# np.linspace(0, 150, 4)#
-scanTime = 1/frequencies[1]
+frequencies = np.linspace(0, 1, 9)#[np.linspace(0,0.5,51)[21]]#np.ones(5)# np.linspace(0, 150, 4)#
+scanTime = 3/frequencies[1]
+
+#frequencies = np.zeros(100)
 #scanTime = 1
+scanTime = max(scanTime, 10)
 
 vellist = frequencies*(2*(Xmax-Xmin))
 
-repetitions = 1
+repetitions = 1000
 
 def lin(p,x):
     a,b= p
@@ -40,28 +45,28 @@ def lin(p,x):
 
 if not os.path.isdir(directory): os.mkdir(directory)
 
-## avoids overwriting
-if os.path.isfile(data_file): 
-    print('filename exists choose another one!') 
-    sys.exit()
+if protect_overwrite:
+    ## avoids overwriting
+    if os.path.isfile(data_file): 
+        print('filename exists choose another one!') 
+        sys.exit()
 
-if not os.path.exists(data_file):
-    with open(data_file, 'w') as f:
-            f.write('nom_vel\tvel\tmsr\tcount\tseconds\n')
+with open(data_file, 'w') as f:
+        f.write('nom_vel\tvel\tmsr\tcount\tseconds\n')
 
 
 
 clock = Agilent("GPIB::14::INSTR")
 skim = HP33120A("GPIB::15::INSTR")
 piezo = BK4060B('USB0::62700::60984::575A23113::INSTR')
-caen = CAEN("/home/mossbauer/mossbauer_control/caen_configs/co57_config_2ch_4inch")
-ps = PS4000()
+caen = CAEN("/home/mossbauer/mossbauer_control/caen_configs/co57_config_2ch")
+#ps = PS4000()
 
 
-ps.setChannel(channel='A', coupling='DC', VRange=10, VOffset=0.0, enabled=True)
-ps.setChannel(channel='B', coupling='DC', VRange=10, VOffset=0.0, enabled=True)
-samples_per_segment = ps.memorySegments(1)
-ps.setNoOfCaptures(1)
+#ps.setChannel(channel='A', coupling='DC', VRange=10, VOffset=0.0, enabled=True)
+#ps.setChannel(channel='B', coupling='DC', VRange=10, VOffset=0.0, enabled=True)
+#samples_per_segment = ps.memorySegments(1)
+#ps.setNoOfCaptures(1)
 si = [1e-4]
 
 piezo.device.write("*RST")
@@ -143,7 +148,7 @@ for j in range(repetitions):
             
 
             actualscanTime = scanTime
-            si = ps.setSamplingInterval(si[0], scanTime)
+            #si = ps.setSamplingInterval(si[0], scanTime)
             
             #print(si)
         else:
@@ -164,17 +169,18 @@ for j in range(repetitions):
             piezo.frequency = frequencies[i]
             if piezo.output=='OFF': piezo.output='ON'; clock.device.write('*TRG'); time.sleep(2*scanTime)
                 
-            si = ps.setSamplingInterval(si[0], period)
+            #si = ps.setSamplingInterval(si[0], period)
             #print(si)
             t1 = time.time()
 
-        ps.setSimpleTrigger(trigSrc="B", threshold_V=2.0, direction="Rising", delay=0, enabled=True, timeout_ms=0)
-        ps.runBlock()
+        #ps.setSimpleTrigger(trigSrc="B", threshold_V=2.0, direction="Rising", delay=0, enabled=True, timeout_ms=0)
+        #ps.runBlock()
         time.sleep(0.1)
 
+        
+        caen.start() #it takes a bit, ideally we have also a switch after this so we can wait!
         clock.device.write('*TRG')
-        t1 = time.time()
-        caen.start()
+
         #t2 = time.time()
 
         t0 = time.time()
@@ -182,23 +188,23 @@ for j in range(repetitions):
             #print(time.time()-t0)
             time.sleep(actualscanTime/1000)
         caen.stop()
-
-        time.sleep(scanTime/10)
-        #t3 = time.time()
-        ps.waitReady()
-        #t4 = time.time()
-        #data = [np.ones(1000),np.ones(1000)]
-        (data, nSamps, ovf) = ps.getDataRawBulkOld(['A', 'B'])
-
         caen.update_count()
-        
+
         count_list_ch_0.append(caen.count[0] - prev_count[0])
         count_list_ch_1.append(caen.count[1] - prev_count[1])
         prev_count[0] = caen.count[0]
         prev_count[1] = caen.count[1]
-
         
         actual_scanTime_list.append(actualscanTime)
+
+        time.sleep(scanTime/10)
+        #t3 = time.time()
+        #ps.waitReady()
+        #t4 = time.time()
+        data = [np.ones(1000),np.ones(1000)]
+        #(data, nSamps, ovf) = ps.getDataRawBulkOld(['A', 'B'])
+
+
 
         #nominal velocity
         nominal_velocity_list_ch_0.append(2*(Xmax-Xmin)*frequencies[i])
@@ -229,8 +235,10 @@ for j in range(repetitions):
                     f.write(f'{nominal_velocity_list_ch_0[-1]}\t{actual_velocity_list_ch_0[-1]}\t{v_mean_squared_residual_ch_0[-1]}\t{count_list_ch_0[-1]}\t{actual_scanTime_list[-1]}\n')
                     f.write(f'{nominal_velocity_list_ch_1[-1]}\t{actual_velocity_list_ch_1[-1]}\t{v_mean_squared_residual_ch_1[-1]}\t{count_list_ch_1[-1]}\t{actual_scanTime_list[-1]}\n')
 
-        print('full scans: {}/{}, current iteration {}/{},  +/-{:.2f} mm/s ch_0: {:.2f} Hz ch_1: {:.2f} Hz'.format(j,repetitions, i,len(frequencies), actual_velocity_list_ch_0[-1], count_list_ch_0[-1]/scanTime, count_list_ch_1[-1]/scanTime))
+        #print('full scans: {}/{}, current iteration {}/{},  +/-{:.2f} mm/s ch_0: {:.2f} Hz ch_1: {:.2f} Hz'.format(j,repetitions, i,len(frequencies), actual_velocity_list_ch_0[-1], count_list_ch_0[-1]/scanTime, count_list_ch_1[-1]/scanTime))
         #print(t1-t0,t2-t1,t3-t2,t4-t3,t5-t4,time.time()-t5)
+        print('full scans: {}/{}, current iteration {}/{},  +/-{:.2f} mm/s ch_0: {:.2f} Hz ch_1: {:.2f} Hz ratio: {:.2f}'.format(j,repetitions, i,len(frequencies), nominal_velocity_list_ch_0[-1], count_list_ch_0[-1]/scanTime, count_list_ch_1[-1]/scanTime, count_list_ch_0[-1]/count_list_ch_1[-1]))
+        
 
 #plt.show()
 
@@ -241,5 +249,5 @@ skim.output = 'OFF'
 piezo.close()
 clock.close()
 caen.close()
-ps.close()
+#ps.close()
 

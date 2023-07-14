@@ -102,7 +102,7 @@ class CAEN:
             self.count[i] = int(m.group(2))
         return
 
-    def histogram(self, readfile = r'Histo_0_0.txt', savefile = r'/home/mossbauer_lab/Data/Hist', skim_lim_lower = 0, skim_lim_upper = 4096):
+    def histogram(self, readfile = r'Histo_0_0.txt', savefile = r'/home/mossbauer/Data/Hist', skim_lim_lower = 0, skim_lim_upper = 16384):
         "creates the histogram as Histo_0_0.txt, reads prints it in terminal and saves it with new name"
         self.send('h')
         time.sleep(0.1) #wait for file to update!
