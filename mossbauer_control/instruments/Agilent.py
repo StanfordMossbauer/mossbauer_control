@@ -133,6 +133,17 @@ class Agilent:
         self.device.write("TRIGger:SLOPe {}".format(value))
         return
 
+    @property
+    def dutycycle(self):
+        return self.device.query("TRIGger:SLOPe?")[:-1]
+
+    @dutycycle.setter
+    #{POSitive|NEGative}
+    def dutycycle(self, value):
+        self.device.write("TRIGger:SLOPe {}".format(value))
+        return
+
+
     
     def trigger(self):
         self.device.write('*TRG')

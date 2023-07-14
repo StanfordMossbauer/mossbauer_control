@@ -4,3 +4,4 @@ from .TDS754A import TDS754A
 from .CAEN import CAEN
 from .HP33120A import HP33120A
 from .picoscope.ps4000 import PS4000
+from .BK4060B import BK4060B
