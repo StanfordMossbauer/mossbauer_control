@@ -1,7 +1,7 @@
 #######################
 # Software Parameters #
 #######################
-VERBOSE_MODE OFF
+VERBOSE_MODE ON
 
 ##################
 # DAQ Parameters #
@@ -10,11 +10,12 @@ VERBOSE_MODE OFF
 ACQUISITION_MODE LIST
 RECORD_LENGTH  2000
 PULSE_POLARITY NEGATIVE
-GROUP_TRG_ENABLE_MASK 0x3
+GROUP_TRG_ENABLE_MASK 0x7
 DC_OFFSET 0x2100
 
 ENERGY_SKIM ON
 WRITE_REGISTER 0x1180 0x14310009 0xFFFFFFFF  # enable skimming ch 1
+WRITE_REGISTER 0x1280 0x14310009 0xFFFFFFFF  # enable skimming ch 2
 
 ##################
 # DPP Parameters #
@@ -72,11 +73,15 @@ WRITE_REGISTER 0x10cc 0x0000452 0xffffffff  # upper 1106
 #channel 1
 WRITE_REGISTER 0x11c8 0x0000284 0xffffffff  # lower 680
 WRITE_REGISTER 0x11cc 0x0000452 0xffffffff  # upper 1106
+#channel 2
+WRITE_REGISTER 0x12c8 0x0000284 0xffffffff  # lower 680
+WRITE_REGISTER 0x12cc 0x0000452 0xffffffff  # upper 1106
 
 
 # block size
 WRITE_REGISTER 0x1034 0x0000001 0xFFFFFFFF
 WRITE_REGISTER 0x1134 0x0000001 0xFFFFFFFF
+WRITE_REGISTER 0x1234 0x0000001 0xFFFFFFFF
 
 
 # external trigger
