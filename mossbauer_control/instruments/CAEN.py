@@ -119,8 +119,9 @@ class CAEN:
 if __name__=='__main__':
     verbose = False
     config_file = 'caen_configs/co57_config_2ch'
-    integration_time = 100
+    integration_time = 1000
+    channel = 2
     digi = CAEN(config_file, verbose=verbose)
     digi.timed_acquire(integration_time)
-    rate = digi.count[1]/integration_time
-    print('%.1f +/- %.2f' % (rate, rate*1/np.sqrt(digi.count[1])))
+    rate = digi.count[channel]/integration_time
+    print('%.1f +/- %.2f' % (rate, rate*1/np.sqrt(digi.count[channel])))

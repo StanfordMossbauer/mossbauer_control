@@ -116,6 +116,16 @@ class HP33120A:
         self.device.write("TRIGger:SOURce {}".format(value))
         return
 
+    @property
+    def dutycycle(self):
+        return self.device.query("PULSe:DCYCle?")[:-1]
+
+    @dutycycle.setter
+    #20to80
+    def dutycycle(self, value):
+        self.device.write("PULSe:DCYCle {}".format(value))
+        return
+
 
     @property
     def triggerslope(self):
