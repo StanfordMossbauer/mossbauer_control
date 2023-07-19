@@ -7,6 +7,8 @@ import numpy as np
 import atexit
 import re
 
+from base import *
+
 key_map = {
     'stop': 'S',
     'start': 's',
@@ -15,7 +17,7 @@ key_map = {
     'histogram': 'h',
 }
 
-class CAEN:
+class CAEN(MossbauerInstrument):
     """Class to wrap dpp-readout and interface with digitizer.
     Code was adapted from the script caen_handler.py, which Chas
     wrote to interact with the wavedump software.

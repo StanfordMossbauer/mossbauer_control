@@ -9,9 +9,11 @@ Created on Fri Feb 17 17:07:08 2023
 import pyvisa
 import sys
 import atexit
+
+from base import *
    
 
-class Agilent:
+class Agilent(MossbauerInstrument):
     '''
     Initiates an instance of the DFR1507A driving a KR26.
     '''
@@ -21,6 +23,15 @@ class Agilent:
         self.device = rm.open_resource(resource)
         atexit.register(self.close)  # close self if python process dies
         print(self.device.query('*IDN?'))
+
+    def setup_for_mossbauer_scan(self):
+        self.mode = 'PULSE'
+        self.frequency = 1000
+        self.amplitude = 5
+        self.offset = 2.5 # somehow the hp signal generator outputs a value that isd different from seeting. 1.3 gives 2.5
+        self.triggersource = 'BUS'
+        self.output = 'ON'
+        return
         
     @property
     def mode(self):
