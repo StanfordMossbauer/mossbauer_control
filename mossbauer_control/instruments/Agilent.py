@@ -10,7 +10,8 @@ import pyvisa
 import sys
 import atexit
 
-from base import *
+#from mossbauer_control.instruments import MossbauerInstrument
+from .base import MossbauerInstrument
    
 
 class Agilent(MossbauerInstrument):

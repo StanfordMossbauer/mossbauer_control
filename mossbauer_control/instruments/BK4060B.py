@@ -12,7 +12,7 @@ import usbtmc
 import sys
 import atexit
 
-from base import *
+from .base import *
    
 
 class BK4060B(MossbauerInstrument):
@@ -27,6 +27,8 @@ class BK4060B(MossbauerInstrument):
         #atexit.register(self.close)  # close self if python process dies
         #print(self.device.query('*IDN?'))
         print(self.device.ask('*IDN?'))
+        self.Vmax = 10
+        self.Vmin = 0
 
         
         self.deviceSettings = {'mode': [0, 0], 'frequency': [1, 1], 'period': [1, 1], 'width': [0.1, 0.1],
@@ -47,8 +49,8 @@ class BK4060B(MossbauerInstrument):
         self.burstmode = 'NCYC' # TRIG:Ncycles (TTL define start of the N cycles), GAT:Gated (TTL defined Output onor off)
         self.burstphase = -90 # phase between marter clock and drive signal
         self.triggersource = 'EXT'
-        self.amplitude = Vmax-Vmin 
-        self.offset = (Vmax+Vmin)/2
+        self.amplitude = self.Vmax-self.Vmin 
+        self.offset = (self.Vmax+self.Vmin)/2
         self.output = 'ON'
 
         # set switch change (channel 2)
