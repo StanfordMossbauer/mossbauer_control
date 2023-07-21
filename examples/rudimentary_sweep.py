@@ -20,8 +20,8 @@ def fit_picoscope_data(frequency, data, si):
 def write_results(frequency, results, data_file, print_results=True):
     save_kwargs = {}
     if os.path.exists(data_file):
-        save_kwargs = dict(mode='a', index=False, header=False)
-    pd.DataFrame(results).to_csv(data_file, **save_kwargs)
+        save_kwargs = dict(mode='a', header=False)
+    pd.DataFrame(results).to_csv(data_file, index=False, **save_kwargs)
     if print_results:
         print_str = """
         frequency {freq:.3f}, +/-{vel:.2f} mm/s ch0: {ch0:.2f} Hz ch_1: {ch1:.2f} Hz ratio: {rat:.2f}
@@ -74,7 +74,7 @@ class MossbauerScan:
     def dummy_sweep(self):
         print('dummy scan')
         #### Dummy Sweep ####
-        for inst in insts:
+        for inst in self.insts:
             inst.setup_dummy_sweep()
         self.clock.device.write('*TRG')
         time.sleep(5)
@@ -129,10 +129,11 @@ class MossbauerScan:
             )
             for ch in (0, 1)
         ]
-        self.prev_count = self.caen.count
+        self.prev_count[:] = self.caen.count[:]
         return results
 
     def scan(self, frequencies, repetitions, data_file='test.dat'):
+        self.dummy_sweep()
         for j in range(repetitions):
             for frequency in frequencies:
                 if frequency==0:
@@ -149,7 +150,7 @@ if __name__=='__main__':
     repetitions = 1000
 
     directory = "/home/mossbauer/Data/{}_scan/".format(time.strftime("%Y%m%d"))
-    data_file = directory + 'test'
+    data_file = directory + 'test.csv'
     if not os.path.isdir(directory):
         os.mkdir(directory)
 
@@ -160,4 +161,4 @@ if __name__=='__main__':
             print('filename exists choose another one!') 
             sys.exit()
 
-    scan.scan(frequencies, repetitions)
+    scan.scan(frequencies, repetitions, data_file)
