@@ -12,7 +12,7 @@ import pyvisa
 import sys
 import atexit
 
-from base import *
+from .base import *
 
 class HP33120A(MossbauerInstrument):
     '''
@@ -153,7 +153,7 @@ class HP33120A(MossbauerInstrument):
 
     @property
     def dutycycle(self):
-        return self.device.query("PULSe:DCYCle?")[:-1]
+        return float(self.device.query("PULSe:DCYCle?")[:-1])
 
     @dutycycle.setter
     #20to80

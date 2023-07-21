@@ -33,7 +33,7 @@ from ctypes import byref, POINTER, create_string_buffer, c_float, \
     c_int16, c_int32, c_uint32, c_void_p
 from ctypes import c_int32 as c_enum
 
-from picoscope.picobase import _PicoscopeBase
+from .picobase import _PicoscopeBase
 
 """
 pico-python is Copyright (c) 2013-2014 By:

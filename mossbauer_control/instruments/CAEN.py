@@ -7,7 +7,7 @@ import numpy as np
 import atexit
 import re
 
-from base import *
+from .base import *
 
 key_map = {
     'stop': 'S',
