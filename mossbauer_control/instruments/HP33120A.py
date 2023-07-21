@@ -12,7 +12,9 @@ import pyvisa
 import sys
 import atexit
 
-class HP33120A:
+from base import *
+
+class HP33120A(MossbauerInstrument):
     '''
     Initiates an instance of the DFR1507A driving a KR26.
     '''
@@ -22,6 +24,39 @@ class HP33120A:
         self.device = rm.open_resource(resource)
         atexit.register(self.close)  # close self if python process dies
         print(self.device.query('*IDN?'))
+
+    def setup_mossbauer_scan(self):
+        """Set up skimming for mossbauer scan"""
+        self.mode = 'SQU'
+        dutypercent = 50
+        self.frequency = 1
+        self.dutycycle = dutypercent
+        self.burststate = 1 
+        self.burstmode = 'TRIG' 
+        self.burstphase = int(-360*(1-dutypercent/100)+10)
+        self.amplitude = 5
+        self.offset = 2.5 # somehow the hp signal generator outputs a value that isd different from seeting. 1.3 gives 2.5
+        self.triggersource = 'EXT'
+        self.output = 'ON'
+        return
+
+    def setup_sweep(self, frequency, cycles):
+        """set up skimming for sweep"""
+        #switch upstream counting or not
+        self.burstcycles = 2*cycles
+        self.frequency = 2*frequency
+        return
+
+    def setup_dummy_sweep(self):
+        self.burstcycles = 2  # for dummy sweep
+        self.assert_output('ON')
+        return
+
+    def assert_output(self, output):
+        """change channel output iff not already"""
+        if self.output != output:
+            self.output = output
+        return
         
     @property
     def mode(self):

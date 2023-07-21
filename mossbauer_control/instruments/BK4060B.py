@@ -11,11 +11,13 @@ import pyvisa
 import usbtmc
 import sys
 import atexit
+
+from base import *
    
 
-class BK4060B:
+class BK4060B(MossbauerInstrument):
     '''
-    Initiates an instance of the DFR1507A driving a KR26.
+    Initiates an instance of the BK4060B
     '''
     def __init__(self, resource =  'USB0::62700::60984::575A23113::INSTR' ):
         
@@ -34,6 +36,63 @@ class BK4060B:
                                'output': ['OFF', 'OFF'], 'triggersource': [0, 0],
                                'burstphase': [1, 1], 'triggerdelay': [1, 1], 'active': 1}
 
+    def setup_mossbauer_scan(self):
+        self.device.write("*RST")
+
+        #set self motion (channel 1) 
+        self.active = 1
+        self.mode = 'RAMP'
+        self.frequency = 1
+        self.burststate = 'ON' #to do #syncronization with master clock
+        self.burstmode = 'NCYC' # TRIG:Ncycles (TTL define start of the N cycles), GAT:Gated (TTL defined Output onor off)
+        self.burstphase = -90 # phase between marter clock and drive signal
+        self.triggersource = 'EXT'
+        self.amplitude = Vmax-Vmin 
+        self.offset = (Vmax+Vmin)/2
+        self.output = 'ON'
+
+        # set switch change (channel 2)
+        self.active = 2
+        self.mode = 'SQUARE'
+        self.frequency = 1
+        self.burststate = 'ON' #to do #syncronization with master clock
+        self.burstmode = 'NCYC' # TRIG:Ncycles (TTL define start of the N cycles), GAT:Gated (TTL defined Output onor off)
+        self.burstphase = 0 # phase between marter clock and drive signal
+        self.triggersource = 'EXT'
+        self.amplitude = 5
+        self.offset = 2.5
+        self.output = 'ON'
+        return
+
+    def setup_sweep(self, frequency, cycles):
+        #switch downstream: choosing channel
+        self.active = 2 #switch
+        self.burstcycles = cycles   
+        self.frequency = frequency
+
+        #stage moving otr not
+        self.active = 1 #position voltage
+        self.burstcycles = cycles   
+        self.frequency = frequency
+        return
+
+    def setup_dummy_sweep(self):
+        self.active = 1
+        self.burstcycles = 1 # for dummy sweep
+        self.active = 2
+        self.burstcycles = 1 # for dummy sweep
+        for ch in (1, 2):
+            self.assert_output(ch, 'ON')
+        return
+
+    def assert_output(self, channel, output):
+        """change channel output iff not already"""
+        orig_active = self.active
+        self.active = channel
+        if self.output != output:
+            self.output = output
+        self.active = orig_active
+        return
     
     @property
     def active(self):

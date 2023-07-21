@@ -70,11 +70,9 @@ DECIMATION 0  # decimation (the input signal samples are averaged within this nu
 #channel 0
 WRITE_REGISTER 0x10c8 0x0000284 0xffffffff  # lower 644
 WRITE_REGISTER 0x10cc 0x0000452 0xffffffff  # upper 1106
-
 #channel 1
 WRITE_REGISTER 0x11c8 0x0000284 0xffffffff  # lower 680
 WRITE_REGISTER 0x11cc 0x0000452 0xffffffff  # upper 1106
-#
 #channel 2
 WRITE_REGISTER 0x12c8 0x0000284 0xffffffff  # lower 680
 WRITE_REGISTER 0x12cc 0x0000452 0xffffffff  # upper 1106
