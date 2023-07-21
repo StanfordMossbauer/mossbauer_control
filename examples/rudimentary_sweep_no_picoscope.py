@@ -14,6 +14,7 @@ directory = "/home/mossbauer/Data/{}_scan/".format(time.strftime("%Y%m%d"))
 #data_file = directory + 'Fe0004_1_mms_0.05_mms_19in.dat'
 #data_file = directory + 'Fe0004_1_mms_0.05_mms_19in_cardboard.dat'
 data_file = directory + 'FeCy_0.6_mms_9steps_0.6-17in.dat'
+data_file = directory + 'Fe0004_0vel_1step_0.6-17in_noskim_darknoise.dat'
 data_file = directory + 'Fe0004_0.9_mms_13steps_0.6-17in.dat'
 #data_file = directory + 'Fe0004_0.6_mms_outersteps_0.6-17in.dat'
 
@@ -30,6 +31,7 @@ Xmin = 0e-3
 
 frequencies = np.linspace(0, 1, 9)#[np.linspace(0,0.5,51)[21]]#np.ones(5)# np.linspace(0, 150, 4)#
 frequencies = np.linspace(0, 1.5, 13)#[-4:]
+#frequencies = np.array([0.1,0.1])#np.linspace(0, 1.5, 13)#[-4:]
 #scanTime = 3/frequencies[1]
 scanTime = 24
 if scanTime<(1/frequencies[1:].min()): print("Careful too shot time for lower frequency")
@@ -152,7 +154,7 @@ time.sleep(5)
 #####################
 print('dummy scan done')
 for j in range(repetitions):
-    for frequency in frequencies:
+    for i,frequency in enumerate(frequencies):
         if frequency==0:
             piezo.active = 1
             piezo.output = 'OFF'
@@ -181,6 +183,9 @@ for j in range(repetitions):
         piezo.active = 1 #position voltage
         piezo.burstcycles = cycles   
         piezo.frequency = frequency
+####TODO REMOVE#####
+##### setting all speeds to zero
+       # if piezo.output=='ON': piezo.output = 'OFF';
 
         caen.start() #it takes a bit, ideally we have also a switch after this so we can wait!
         time.sleep(1)  # TODO: remove when everything working
@@ -191,6 +196,8 @@ for j in range(repetitions):
         time.sleep(1)  # TODO: remove when everything working
         caen.stop()
         caen.update_count()
+        caen.histogram()
+
 
 
         count_list_ch_0.append(caen.count[0] - prev_count[0])
@@ -205,8 +212,8 @@ for j in range(repetitions):
         data = [np.ones(1000),np.ones(1000)]
 
         #nominal velocity
-        nominal_velocity_list_ch_0.append(2*(Xmax-Xmin)*frequency)
-        nominal_velocity_list_ch_1.append(-2*(Xmax-Xmin)*frequency)
+        nominal_velocity_list_ch_0.append(2*(Xmax-Xmin)*frequencies[i])
+        nominal_velocity_list_ch_1.append(-2*(Xmax-Xmin)*frequencies[i])
 
         #actual velocity (fit to strain gauge reading)
         tt = np.arange(len(data[0])//2)*si[0]
@@ -235,7 +242,7 @@ for j in range(repetitions):
 
         #print('full scans: {}/{}, current iteration {}/{},  +/-{:.2f} mm/s ch_0: {:.2f} Hz ch_1: {:.2f} Hz'.format(j,repetitions, i,len(frequencies), actual_velocity_list_ch_0[-1], count_list_ch_0[-1]/scanTime, count_list_ch_1[-1]/scanTime))
         #print(t1-t0,t2-t1,t3-t2,t4-t3,t5-t4,time.time()-t5)
-        print('full scans: {}/{}, current frequency {:.3f},  +/-{:.2f} mm/s ch_0: {:.2f} Hz ch_1: {:.2f} Hz ratio: {:.2f}'.format(j,repetitions,frequency, nominal_velocity_list_ch_0[-1], count_list_ch_0[-1]/actual_DAQTime_list[-1], count_list_ch_1[-1]/actual_DAQTime_list[-1], count_list_ch_0[-1]/count_list_ch_1[-1]))
+        print('full scans: {}/{}, current frequency {:.3f},  +/-{:.2f} mm/s ch_0: {:.2f} Hz ch_1: {:.2f} Hz ratio: {:.2f}'.format(j,repetitions,frequencies[i], nominal_velocity_list_ch_0[-1], count_list_ch_0[-1]/actual_DAQTime_list[-1], count_list_ch_1[-1]/actual_DAQTime_list[-1], count_list_ch_0[-1]/count_list_ch_1[-1]))
         
 
 #plt.show()
