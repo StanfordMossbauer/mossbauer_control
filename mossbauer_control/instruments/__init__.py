@@ -5,5 +5,6 @@ from .CAEN import CAEN
 from .HP33120A import HP33120A
 from .picoscope.ps4000 import PS4000
 from .picoscope.ps2000 import PS2000
+from .picoscope.ps2000a import PS2000a
 from .BK4060B import BK4060B
 from .base import MossbauerInstrument

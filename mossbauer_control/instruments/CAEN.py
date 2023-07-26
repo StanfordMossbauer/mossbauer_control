@@ -15,6 +15,7 @@ key_map = {
     'quit': 'q',
     'count': 'n',
     'histogram': 'h',
+    'restart': 'r',
 }
 
 class CAEN(MossbauerInstrument):

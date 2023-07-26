@@ -1,7 +1,7 @@
 
 import time
 import os
-from mossbauer_control.instruments import CAEN
+from mossbauer_control.instruments import CAEN, Agilent, HP33120A, PS2000, BK4060B
 #from mossbauer_control.motor import Motor
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
@@ -10,16 +10,28 @@ import numpy as np
 plot = True
 channels = [1]
 
-caen = CAEN("/home/mossbauer/mossbauer_control/caen_configs/co57_config_2ch")
+caen = CAEN("/home/mossbauer/mossbauer_control/caen_configs/co57_config_2ch_noskim")
+gate = HP33120A("GPIB::15::INSTR")
+channel = BK4060B('USB0::62700::60984::575A23113::INSTR')
+
+gate.mode = "DC"
+gate.offset = 5
+
+channel.active = 2
+channel.mode = "DC"
+channel.offset = 5 
+
+
 directory = "/home/mossbauer/Data/{}_histograms/".format(time.strftime("%Y%m%d"))
 
 if not os.path.isdir(directory): os.mkdir(directory)
     
-absorber = 'Ferrocyanide'
-integration_time = 100
+absorber = 'noabsorber'
+integration_time = 1000
 detector_distance = 17 #in
 
 print('integrating {} seconds, will finish at {}'.format(integration_time, datetime.now() + timedelta(seconds=integration_time)))
+
 caen.timed_acquire(integration_time)
 caen.update_count()
 

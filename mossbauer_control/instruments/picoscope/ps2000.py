@@ -12,6 +12,7 @@ The functions should not have any default values as these should be handled
 by PSBase.
 """
 
+
 from __future__ import division
 from __future__ import absolute_import
 from __future__ import print_function
@@ -34,6 +35,7 @@ from ctypes import byref, POINTER, create_string_buffer, c_float, \
 from ctypes import c_int32 as c_enum
 
 from .picobase import _PicoscopeBase
+import pdb
 
 """
 pico-python is Copyright (c) 2013-2014 By:
@@ -104,7 +106,7 @@ class PS2000(_PicoscopeBase):
     MAX_VALUE = 32767
     MIN_VALUE = -32767
 
-    MAX_TIMEBASES = 19
+    MAX_TIMEBASES = 24
 
     UNIT_INFO_TYPES = {"DriverVersion": 0x0,
                        "USBVersion": 0x1,
@@ -236,6 +238,7 @@ class PS2000(_PicoscopeBase):
             c_int16(self.handle), c_int16(tb), c_uint32(noSamples),
             byref(time_interval), byref(time_units), c_int16(1),
             byref(maxSamples))
+
 
         self.checkResult(m)
 

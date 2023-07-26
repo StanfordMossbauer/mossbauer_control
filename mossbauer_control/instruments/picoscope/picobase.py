@@ -305,6 +305,7 @@ class _PicoscopeBase(object):
         """Return (actualSampleInterval, noSamples, maxSamples)."""
         self.oversample = oversample
         self.timebase = self.getTimeBaseNum(sampleInterval)
+        print(self.timebase)
 
         timebase_dt = self.getTimestepFromTimebase(self.timebase)
 
