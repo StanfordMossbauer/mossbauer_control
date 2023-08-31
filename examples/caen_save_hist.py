@@ -44,7 +44,7 @@ for channel in channels:
         np.sqrt(caen.count[channel])/integration_time,
     ))
 	filename  = 'Hist_{}_{}_{}s_{}in.txt'.format(channel, absorber, integration_time,detector_distance)
-	h.append(caen.histogram( readfile = 'Histo_0_{}.txt'.format(channel),savefile = directory+filename))
+	h.append(caen.histogram(channel=0, savefile = directory+filename))
 
 	if plot:
 		plt.plot(h[-1])

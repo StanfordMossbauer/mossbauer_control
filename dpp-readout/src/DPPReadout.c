@@ -468,7 +468,12 @@ int main(int argc, char *argv[])
                     CAEN_DGTZ_SWStopAcquisition(handle[b]); 
                     printf("Restarted\n");
                     CAEN_DGTZ_ClearData(handle[b]);
+                    // Clear the memory and the histogram
                     for (ch = 0; ch < MaxNChannels; ch++)
+                        if (ECnt[b][ch] != 0) 
+                            for(i=0; i<(1<<14); i++) {
+                                EHisto[b][ch][i] = 0;
+                            }
                         ECnt[b][ch] = 0;
                     CAEN_DGTZ_SWStartAcquisition(handle[b]);
                 }

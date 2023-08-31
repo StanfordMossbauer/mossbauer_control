@@ -21,6 +21,72 @@ from scipy.optimize import leastsq
 from scipy.optimize import curve_fit
 from scipy.optimize import minimize
 
+
+def fit_picoscope_data(
+        Xrange,
+        Vrange,
+        frequency,
+        data,
+        gate,
+        actualSamplingInfo,
+        plot=False,
+        save=False
+    ):
+    """Takes in picoscope data, fits a line, returns slope and err"""
+
+    fs = 1/actualSamplingInfo[0]
+    period = actualSamplingInfo[0]*actualSamplingInfo[1]
+    cycles = int(period*frequency)
+
+    clip = int(cycles/frequency*fs)//cycles*cycles
+
+    data = data[:clip].reshape(cycles,-1).mean(axis = 0)
+    gate = gate[:clip].reshape(cycles,-1).mean(axis = 0)
+
+    dataP = data[:len(data)//2]
+    maskP = gate[:len(data)//2] > 5
+    dataN = data[len(data)//2:]
+    maskN = gate[len(data)//2:] > 5
+
+    dataN = dataN[maskN]
+    dataP = dataP[maskP]
+
+    line = lambda p, x: p[0] + p[1]*x  # fit function
+
+    p0 = [5,1]
+    xdataP = np.arange(len(dataP))/fs
+    xdataN = np.arange(len(dataN))/fs
+
+    try:
+       pP, dpP, msrP = fit_residuals(line, xdataP, dataP, p0, fullout=False)
+       pN, dpN, msrN = fit_residuals(line, xdataN, dataN, p0, fullout=False)
+        
+    except Exception as e:
+        print('Picoscope data fit failed!')
+        print(e)
+        pP, dpP, msrP = np.ones(3)*np.nan
+        pN, dpN, msrN = np.ones(3)*np.nan
+
+    if plot:
+        plt.figure()
+        plt.plot(xdataP, dataP)
+        plt.plot(xdataN, dataN)
+        plt.plot(xdataP, line(pP, xdataP))
+        plt.plot(xdataP, line(pN, xdataN))
+        plt.show()
+
+    if save:
+        file = open('psdata_ramp.dat', 'w')
+        data.tofile(file)
+        file = open('psdata_gate.dat', 'w')
+        gate.tofile(file)
+
+    fit_vels = [pP[1]*Xrange/Vrange, pN[1]*Xrange/Vrange]
+    fit_errs = [dpP[1]*Xrange/Vrange, dpN[1]*Xrange/Vrange]
+    fit_msr = [msrP*Xrange/Vrange, msrN*Xrange/Vrange]
+
+    return fit_vels, fit_errs, fit_msr
+
 def plot_caen_traces():
     fn_map = {
         'Input': 'Waveform_0_0_1.txt',

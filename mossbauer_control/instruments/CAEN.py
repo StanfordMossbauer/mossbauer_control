@@ -105,17 +105,15 @@ class CAEN(MossbauerInstrument):
             self.count[i] = int(m.group(2))
         return
 
-    def histogram(self, readfile = r'Histo_0_0.txt', savefile = r'/home/mossbauer/Data/Hist', skim_lim_lower = 0, skim_lim_upper = 16384):
+    def histogram(self, channel=0, savefile=None, skim_lower=0, skim_upper=None):
         "creates the histogram as Histo_0_0.txt, reads prints it in terminal and saves it with new name"
         self.send('h')
-        time.sleep(0.1) #wait for file to update!
-        file0 = (readfile)
+        time.sleep(0.1) # wait for file to update!
+        file0 = (f'Histo_0_{channel}.txt')
         hist = np.loadtxt(file0)
-        np.savetxt(savefile, hist, fmt='%s')
-        fig = tpl.figure()
-        fig.plot(np.arange(skim_lim_lower, skim_lim_upper), hist[skim_lim_lower:skim_lim_upper])
-        fig.show()
-        return hist    
+        if savefile is not None:
+            np.savetxt(savefile, hist, fmt='%s')
+        return hist[skim_lower:skim_upper]
         
         
 

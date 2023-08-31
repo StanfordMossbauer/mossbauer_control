@@ -57,8 +57,9 @@ which was adapted from
 http://www.picotech.com/support/topic4926.html
 """
 
+from ..base import *
 
-class _PicoscopeBase(object):
+class _PicoscopeBase(MossbauerInstrument):
     """
     This class defines a general interface for Picoscope oscilloscopes.
 
@@ -145,6 +146,29 @@ class _PicoscopeBase(object):
 
         if connect is True:
             self.open(serialNumber)
+
+    ############################################
+    # Added by Joey                            #
+    ############################################
+    def setup_mossbauer_scan(self):
+        self.setChannel(channel='A', coupling='DC', VRange=10, VOffset=0.0, enabled=True)
+        self.setChannel(channel='B', coupling='DC', VRange=10, VOffset=0.0, enabled=True)
+        self.actualSamplingInfo = self.setSamplingInterval(5e-3,40)
+        return
+
+    def setup_sweep(self, frequency, cycles):
+        self.setSimpleTrigger(
+            trigSrc="B",
+            threshold_V=1.0,
+            direction="Rising",
+            delay=0,
+            enabled=True,
+            timeout_ms=int(5e3)
+        )
+        self.runBlock()
+        time.sleep(0.1)
+        return
+    ###########################################
 
     def getUnitInfo(self, info):
         """Return: A string containing the requested information."""

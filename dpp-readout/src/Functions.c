@@ -122,6 +122,7 @@ int SaveHistogram(char *basename, int b, int ch, uint32_t *EHisto)
     return 0;
 }
 
+
 /* --------------------------------------------------------------------------------------------------------- */
 /*! \fn      SaveWaveforms(int b, int ch, CAEN_DGTZ_DPP_TF2_Waveforms_t *Waveforms)
 *   \brief   Save Waveforms to output files

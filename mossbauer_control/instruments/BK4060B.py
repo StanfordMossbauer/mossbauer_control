@@ -21,14 +21,15 @@ class BK4060B(MossbauerInstrument):
     '''
     def __init__(self, resource =  'USB0::62700::60984::575A23113::INSTR' ):
         
-        #rm = pyvisa.ResourceManager()
-        #self.device = rm.open_resource(resource)
         self.device = usbtmc.Instrument(resource)
-        #atexit.register(self.close)  # close self if python process dies
-        #print(self.device.query('*IDN?'))
         print(self.device.ask('*IDN?'))
+
+        # stage parameters
         self.Vmax = 10
         self.Vmin = 0
+
+        self.Xmax = 318e-3
+        self.Xmin = 0e-3
 
         
         self.deviceSettings = {'mode': [0, 0], 'frequency': [1, 1], 'period': [1, 1], 'width': [0.1, 0.1],
