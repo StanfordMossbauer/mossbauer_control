@@ -113,7 +113,7 @@ int SaveHistogram(char *basename, int b, int ch, uint32_t *EHisto)
     fh = fopen(filename, "w");
     if (fh == NULL)
 		return -1;
-    for(i=0; i<(1<<12); i++) {
+    for(i=0; i<(1<<14); i++) {
 		fprintf(fh, "%d\n", EHisto[i]);
 	}
     fclose(fh);
@@ -121,6 +121,7 @@ int SaveHistogram(char *basename, int b, int ch, uint32_t *EHisto)
 
     return 0;
 }
+
 
 /* --------------------------------------------------------------------------------------------------------- */
 /*! \fn      SaveWaveforms(int b, int ch, CAEN_DGTZ_DPP_TF2_Waveforms_t *Waveforms)
@@ -190,7 +191,7 @@ int GetECnt(int b, int ch, int ECnt)
 	/*
 	* This function counts the bin contents of the histogram
 	*/
-    printf("Total Count: %d\n", ECnt);
+    printf("Channel %d Count: %d\n", ch, ECnt);
 
     return 0;
 }

@@ -21,6 +21,7 @@ static void SetDefaultConfiguration(DPPConfig_t *DPPcfg) {
     DPPcfg->RecordLength = (1024*16);
 	DPPcfg->GWn = 0;
     DPPcfg->EnergySkim = 0;
+    DPPcfg->VerboseMode = 0;
     DPPcfg->AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_Oscilloscope;
     DPPcfg->PulsePolarity = CAEN_DGTZ_PulsePolarityPositive;
 }
@@ -140,6 +141,17 @@ int ParseConfigFile(FILE *f_ini, DPPConfig_t *DPPcfg)
 
 
         /****Joey added****/
+
+		// Verbose
+		if (strstr(str, "VERBOSE_MODE")!=NULL) {
+			read = fscanf(f_ini, "%s", str1);
+			if (strcmp(str1, "ON")==0)
+				DPPcfg->VerboseMode = 1;
+			else if (strcmp(str1, "OFF")!=0)
+				printf("%s: invalid option\n", str);
+			continue;
+		}
+
         // Pulse Polarity
 		if (strstr(str, "PULSE_POLARITY")!=NULL) {
 			read = fscanf(f_ini, "%s", str1);

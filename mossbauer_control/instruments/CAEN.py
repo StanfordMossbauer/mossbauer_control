@@ -5,6 +5,9 @@ from os.path import join
 import termplotlib as tpl
 import numpy as np
 import atexit
+import re
+
+from .base import *
 
 key_map = {
     'stop': 'S',
@@ -12,15 +15,18 @@ key_map = {
     'quit': 'q',
     'count': 'n',
     'histogram': 'h',
+    'restart': 'r',
 }
 
-class CAEN:
+class CAEN(MossbauerInstrument):
     """Class to wrap dpp-readout and interface with digitizer.
     Code was adapted from the script caen_handler.py, which Chas
     wrote to interact with the wavedump software.
     """
     def __init__(self, config_file='', verbose=False):
         self.verbose = verbose
+        self.nchannels = 8
+        self.count = np.zeros(self.nchannels, dtype=int)
         self.process = pexpect.spawn(f'dpp-readout {config_file}')
         self.expect('Save waveforms to file\r\n\r\n\r\n')
         atexit.register(self.close)  # close self if python process dies
@@ -50,6 +56,8 @@ class CAEN:
             self.process.expect(exp, timeout=1)
         except:
             print("expect() failed!")
+            print(self.process.before.decode('ascii'), end='')
+            print(self.process.after.decode('ascii'), end='')
             self.close()
         if self.verbose:
             print(self.process.before.decode('ascii'), end='')
@@ -86,30 +94,35 @@ class CAEN:
 
     def update_count(self):
         """Update the total count"""
-        self.send(key_map['count'], r'[0-9]+')
-        assert 'Total Count: ' in str(self.process.before), 'Count failure!'
-        self.count = int(self.process.after)
+        self.send(key_map['count'])
+        pattern = 'Channel ([0-9]) Count: ([0-9]*)'
+        repattern = re.compile(pattern)
+        for i in range(self.nchannels):
+            self.send('%d' % i, pattern)
+            line = self.process.after
+            m = repattern.search(str(line))
+            assert int(m.group(1))==i, line
+            self.count[i] = int(m.group(2))
         return
 
-    def histogram(self, readfile = r'/home/mossbauer_lab/mossbauer_control/Histo_0_0.txt', savefile = r'/home/mossbauer_lab/Data/Hist', skim_lim_lower = 0, skim_lim_upper = 4094):
+    def histogram(self, channel=0, savefile=None, skim_lower=0, skim_upper=None):
         "creates the histogram as Histo_0_0.txt, reads prints it in terminal and saves it with new name"
         self.send('h')
-        time.sleep(0.1) #wait for file to update!
-        file0 = (readfile)
+        time.sleep(0.1) # wait for file to update!
+        file0 = (f'Histo_0_{channel}.txt')
         hist = np.loadtxt(file0)
-        np.savetxt(savefile, hist, fmt='%s')
-        fig = tpl.figure()
-        fig.plot(np.arange(skim_lim_lower, skim_lim_upper), hist[skim_lim_lower:skim_lim_upper])
-        fig.show()
-        return hist    
+        if savefile is not None:
+            np.savetxt(savefile, hist, fmt='%s')
+        return hist[skim_lower:skim_upper]
         
         
 
 if __name__=='__main__':
     verbose = False
-    config_file = 'caen_configs/co57_config'
-    integration_time = 10
+    config_file = 'caen_configs/co57_config_2ch'
+    integration_time = 1000
+    channel = 2
     digi = CAEN(config_file, verbose=verbose)
     digi.timed_acquire(integration_time)
-    print('rate is {:.2f} Hz'.format(digi.count/integration_time))
-    h = digi.histogram(filename = 'Histogram.txt',skim_lim_lower = 500,skim_lim_upper = 1250)
+    rate = digi.count[channel]/integration_time
+    print('%.1f +/- %.2f' % (rate, rate*1/np.sqrt(digi.count[channel])))

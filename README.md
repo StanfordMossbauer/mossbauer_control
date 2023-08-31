@@ -14,8 +14,8 @@ This is located under `dpp-readout`. We can always break it back out into its ow
 
 ```
 cd dpp-readout
-sudo make clean
-sudo make
+make clean
+make
 ```
 
 You can test by running the CLI with the command `dpp-readout`.

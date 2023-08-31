@@ -254,10 +254,14 @@ int main(int argc, char *argv[])
     memset(DoSaveWave, 0, MAXNB*MaxNChannels*sizeof(int));
     for (i = 0; i < MAXNBITS; i++)
         BitMask |= 1<<i; /* Create a bit mask based on number of bits of the board */
+    
+    printf("Acquisition Stopped for Board %d\n", BitMask);
 
     /* *************************************************************************************** */
     /* Set Parameters                                                                          */
     /* *************************************************************************************** */
+    /* This is setting the values of Params and DPPParams which will be used to program the    */
+    /* digitizer. These will come from the config.                                             */
     memset(&Params, 0, MAXNB * sizeof(DigitizerParams_t));
     memset(&DPPParams, 0, MAXNB * sizeof(CAEN_DGTZ_DPP_PHA_Params_t));
 	for (b = 0; b < MAXNB; b++) {
@@ -267,7 +271,6 @@ int main(int argc, char *argv[])
 		/****************************\
 		* Communication Parameters   *
 		\****************************/
-		// TODO: (Some of) this should come from config
 		// Direct USB connection
 		Params[b].LinkType = CAEN_DGTZ_USB;  // Link Type
 		Params[b].VMEBaseAddress = 0;  // For direct USB connection, VMEBaseAddress must be 0
@@ -444,12 +447,18 @@ int main(int argc, char *argv[])
                     for (ch = 0; ch < MaxNChannels; ch++)
                         if (ECnt[b][ch] != 0) 
                             SaveHistogram("Histo", b, ch, EHisto[b][ch]);  // Save Histograms to file for each board
+            if (isdigit(c))
+                for (b = 0; b < MAXNB; b++)
+                    {
+                    // Spit out total count
+                    int ch = c - '0';
+                    GetECnt(b, ch, ECnt[b][ch]);
+                    }
             if (c == 'n')
                 for (b = 0; b < MAXNB; b++)
                     // Spit out total count
                     for (ch = 0; ch < MaxNChannels; ch++)
-                        if (ECnt[b][ch] != 0) 
-                            GetECnt(b, ch, ECnt[b][ch]);
+                        GetECnt(b, ch, ECnt[b][ch]);
             if (c == 'w')
                 for (b = 0; b < MAXNB; b++)
                     for (ch = 0; ch < MaxNChannels; ch++)
@@ -459,6 +468,13 @@ int main(int argc, char *argv[])
                     CAEN_DGTZ_SWStopAcquisition(handle[b]); 
                     printf("Restarted\n");
                     CAEN_DGTZ_ClearData(handle[b]);
+                    // Clear the memory and the histogram
+                    for (ch = 0; ch < MaxNChannels; ch++)
+                        if (ECnt[b][ch] != 0) 
+                            for(i=0; i<(1<<14); i++) {
+                                EHisto[b][ch][i] = 0;
+                            }
+                        ECnt[b][ch] = 0;
                     CAEN_DGTZ_SWStartAcquisition(handle[b]);
                 }
             }
@@ -490,8 +506,8 @@ int main(int argc, char *argv[])
         CurrentTime = get_time();
         ElapsedTime = CurrentTime - PrevRateTime; /* milliseconds */
         if (ElapsedTime > 1000) {
-            if (0) {
-            //system(CLEARSCR);
+            if (DPPcfg.VerboseMode) {
+            system(CLEARSCR);
             PrintInterface();
             printf("Readout Rate=%.2f MB\n", (float)Nb/((float)ElapsedTime*1048.576f));
             for(b=0; b<MAXNB; b++) {
@@ -508,7 +524,6 @@ int main(int argc, char *argv[])
             }
             Nb = 0;
             PrevRateTime = CurrentTime;
-            printf("\n\n");
         }
         
         /* Read data from the boards */

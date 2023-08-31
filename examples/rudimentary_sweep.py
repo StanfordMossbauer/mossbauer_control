@@ -1,105 +1,210 @@
 import time
-import numpy as np
 import os
+import sys
+import numpy as np
+import matplotlib.pylab as plt
+from tqdm import tqdm
+import atexit
+import pandas as pd
 
-from mossbauer_control.motor import Motor
-from mossbauer_control.instruments import CAEN, TDS754A
+import mossbauer_control
+from mossbauer_control.instruments import CAEN, Agilent, HP33120A, PS2000, BK4060B
+
+def write_results(frequency, results, data_file, print_results=True):
+    """Saves results (list of dicts) to file, avoids overwriting"""
+    save_kwargs = {}
+    if os.path.exists(data_file):
+        save_kwargs = dict(mode='a', header=False)
+    pd.DataFrame(results).drop('hist', axis=1).to_csv(
+        data_file, index=False, **save_kwargs
+    )
+    if print_results:
+        print_str = (
+            'frequency {freq:.3f}, +/-{vel:.2f} mm/s ' 
+            'ch0: {ch0:.2f} Hz ch_1: {ch1:.2f} Hz ratio: {rat:.2f}'
+        ).format(
+            freq=frequency,
+            vel=results[0]['nominal_velocity'],
+            ch0=results[0]['count']/results[0]['DAQ_time'],
+            ch1=results[1]['count']/results[1]['DAQ_time'],
+            rat=results[1]['count']/results[0]['count'],
+        )
+        print(print_str)
+    return
+
+class MossbauerScan:
+    def __init__(self):
+        """Set up all the instruments for the scan
+        HARDCODE WARNING!
+        """
+
+        self.scanTime = 48
+
+        self.skim_lower = 644
+        self.skim_upper = 1106
+
+        # something wrong between ch 0-1-2
+        self.skim_lower = 600
+        self.skim_upper = 1000
+
+        self.clock = Agilent("GPIB::14::INSTR")
+        self.skim = HP33120A("GPIB::15::INSTR")
+        self.stage = BK4060B('USB0::62700::60984::575A23113::INSTR')
+        self.caen = CAEN("/home/mossbauer/mossbauer_control/caen_configs/co57_config_2ch")
+
+        self.picoscope = PS2000()
+
+        # TODO add to setup function
+
+        self.insts = [
+            self.clock,
+            self.skim,
+            self.stage,
+            self.caen,
+            self.picoscope,
+        ]
+
+        def exit_function():
+            for inst in self.insts:
+                inst.close()
+        atexit.register(exit_function)
+
+        for inst in self.insts:
+            inst.setup_mossbauer_scan()
+
+        return
+
+    def dummy_sweep(self):
+        """Trigger everything once to sync it all up"""
+        print('dummy sweep')
+        for inst in self.insts:
+            inst.setup_dummy_sweep()
+        self.clock.device.write('*TRG')
+        time.sleep(5)
+        print('dummy sweep done')
+        return
+
+    def zero_velocity_sweep(self):
+        """Does a fake sweep to take data with zero velocity"""
+        self.stage.assert_output(1, 'OFF')
+        results = self.sweep(3*1/self.scanTime) # picoscope buffer is limited...
+        results[0]['nominal_velocity'] = 0
+        results[1]['nominal_velocity'] = 0
+        self.stage.assert_output(1, 'ON')
+        return results
+
+    def sweep(self, frequency):
+        """Run a single sweep (forward + backward)
+        
+        frequency: for "ramp" function (velocity = 2*dX*frequency)
+        """
+        period = 1/frequency
+        cycles = int(self.scanTime/period)
+        actualscanTime = cycles*period
+
+        for inst in self.insts:
+            inst.setup_sweep(frequency, cycles)
+
+        # beware of command-induced delays!
+        self.caen.start() 
+        time.sleep(1)  # TODO: remove when everything working
+        self.clock.device.write('*TRG')
+
+        print('sleep for %d secs' % actualscanTime)
+        time.sleep(actualscanTime)
+        time.sleep(1)  # TODO: remove when everything working
+        self.caen.stop()
+
+        self.picoscope.waitReady()
+        (data, ovf) = self.picoscope.getDataV('A', returnOverflow=True)
+        (gate, ovf) = self.picoscope.getDataV('B', returnOverflow=True)
+
+        fit_vels, fit_errs, fit_msr = mossbauer_control.fit_picoscope_data(
+            self.stage.Xmax - self.stage.Xmin, 
+            self.stage.Vmax - self.stage.Vmin,
+            frequency, 
+            data, 
+            gate, 
+            self.picoscope.actualSamplingInfo, 
+        )
+
+        self.caen.update_count()
+        multiplier = {0: 1, 1: -1}  # determines neg and pos
+        results = []
+        for ch in (0, 1):
+            hist = self.caen.histogram(ch)
+            count = hist[self.skim_lower:self.skim_upper].sum()
+            results.append(dict(
+                    count=count,
+                    unskimmed_count=self.caen.count[ch],
+                    DAQ_time=(actualscanTime/2*self.skim.dutycycle/100),
+                    nominal_velocity=(
+                        2 * (self.stage.Xmax - self.stage.Xmin)
+                        * frequency
+                        * multiplier[ch]
+                    ),
+                    frequency=frequency,
+                    fit_velocity=fit_vels[ch],
+                    fit_err=fit_errs[ch],
+                    fit_msr=fit_msr[ch],
+                    time=time.time(),
+                    hist=hist,
+            ))
+        # clear the data from caen memory
+        self.caen.send('r')
+        return results
+
+    def scan(self, frequencies, repetitions, data_file='test.dat'):
+        """Perform constant-velocity mossbauer scan
+
+        frequencies: list of frequencies for triangle wave stage motion
+        """
+        self.histogram = [
+            {f: np.zeros(16384) for f in frequencies} for ch in (0, 1)
+        ]
+        self.avg_norm = {f: 0 for f in frequencies}
+        self.dummy_sweep()
+        for j in range(repetitions):
+            for frequency in frequencies:
+                if frequency==0:
+                    results = self.zero_velocity_sweep()
+                else:
+                    results = self.sweep(frequency)
+                write_results(frequency, results, data_file)
+                for ch in (0, 1):
+                    hist = results[ch]['hist']
+                    self.histogram[ch][frequency] = (
+                        (self.histogram[ch][frequency]*self.avg_norm[frequency])
+                        + hist
+                    ) / (self.avg_norm[frequency] + 1)
+                    #print(self.histogram[ch][frequency])
+                    hist_fname = data_file.split('.dat')[0] + f'_avghist_{frequency}Hz_Ch{ch}.dat'
+                    #print(ch, frequency)
+                    #print(self.histogram[ch][frequency])
+                    np.savetxt(hist_fname, self.histogram[ch][frequency], fmt='%s')
+                self.avg_norm[frequency] += 1
+        return
 
 
-motor = Motor( agilent = "GPIB0::14::INSTR",arduino = "/dev/ttyACM0")
-caen = CAEN("/home/mossbauer_lab/mossbauer_control/caen_configs/co57_config")
-TDS = TDS754A(resource = "GPIB0::13::INSTR") # TDS is Techtronix Digital Scope
-    
-print(TDS.read_identity())
-TDS.freq_measurement_setup()
-    
-motor.resolution = 1
+if __name__=='__main__':
+    #frequencies = np.linspace(0, 1.5, 25)  # standard 25pts
+    frequencies = np.array([0.365, 0.135])  # manually converted (FeCy 2pts, v=0.232, 0.086 mm/s)
+    #frequencies = np.zeros(1)
+    repetitions = 10000
 
-integration_time = 3600*1
-stroke_length = 50 #mm
+    directory = "/home/mossbauer/Data/{}_scan/".format(time.strftime("%Y%m%d"))
+    #data_file = directory + 'Fe0004_0.9_mms_25steps_0.6-17in.dat'
+    data_file = directory + 'FeCy_0.25_mms_2steps_0.6-17in.dat'
+    #data_file = directory + 'test2'
+    if not os.path.isdir(directory):
+        os.mkdir(directory)
 
-data_file = 'home/mossbauer_lab/Data/20230322_alphaFe.dat'
+    protect_overwrite = True
+    if protect_overwrite:
+        ## avoids overwriting
+        if os.path.isfile(data_file): 
+            print('filename exists choose another one!') 
+            sys.exit()
 
-if not os.path.exists(data_file):
-    with open(data_file, 'w') as f:
-            f.write('vel\tcount\tseconds\n')
-
-
-#calculate velocity list
-velocity_list = np.array([0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.2, 0.2, 0.3, 0.3, 0.3, 0.4,0.4,0.4,0.4,0.5,0.5,0.5,0.5,0.5])#np.arange(0.01,0.5,0.02)               #only positive
-velocity_list = np.arange(1,2,0.5)
-velocity_list = list(np.arange(3,4,0.01))*50
-sweep_time_list = []
-count_list = []
-actual_velocity_list = []
-
-prev_count = 0
-
-if motor.flagA is True:
-    print("not in the correct initial position. put stage at starting point")
-else:
-    print("start experiment")
-    for i in range(len(velocity_list)):
-
-            motor.velocity = velocity_list[i]
-
-            motor.start()
-            while motor.flagA is False: 
-                time.sleep(0.01)
-            
-            caen.start()
-
-            t1 = time.time()
-            while motor.flagB is True:
-                time.sleep(0.01)       
-            sweep_time_list.append(time.time()-t1)
-
-            caen.stop()
-
-            caen.update_count()
-            count_list.append(caen.count - prev_count)
-            actual_velocity_list.append(motor.velocity)
-            prev_count = caen.count
-            
-            with open(data_file, 'a') as f:
-                f.write(f'{actual_velocity_list[-1]}\t{count_list[-1]}\t{sweep_time_list[-1]}\n')
-
-            print('{:.2f} mm/s {:.2f} Hz'.format(actual_velocity_list[-1], count_list[-1]/sweep_time_list[-1]))
-
-
-            time.sleep(0.1)
-            motor.stop()
-
-            #now go backwards same velocity
-
-            motor.velocity = -velocity_list[i]
-
-            motor.start()
-            while motor.flagB is False:  
-                time.sleep(0.01)
-          
-            caen.start()
-
-            t1 = time.time()
-            while motor.flagA is True:
-                time.sleep(0.01)
-
-            sweep_time_list.append(time.time()-t1)
-            caen.stop()
-            
-            caen.update_count()
-            count_list.append(caen.count - prev_count)
-            actual_velocity_list.append(motor.velocity)
-            prev_count = caen.count
-
-            with open(data_file, 'a') as f:
-                f.write(f'{actual_velocity_list[-1]}\t{count_list[-1]}\t{sweep_time_list[-1]}\n')
-
-            print('{:.2f} mm/s {:.2f} Hz'.format(actual_velocity_list[-1], count_list[-1]/sweep_time_list[-1]))
-                        
-            time.sleep(0.1)
-            motor.stop()
-
-
-caen.close()
-motor.close()
+    scan = MossbauerScan()
+    scan.scan(frequencies, repetitions, data_file)

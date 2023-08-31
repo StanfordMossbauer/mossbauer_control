@@ -17,7 +17,7 @@ class BK4054:
     Class object to interact with the BK Precision 4054B signal generator,
     over a USB connection.
     '''
-    def __init__(self, resource):
+    def __init__(self, resource='USB0::62700::60984::575A23113::0::INSTR'):
         '''
         Initialize a connection, and set up the unit to generate the appropriate
         TTL logic level signals.
@@ -118,3 +118,7 @@ class BK4054:
             print(f"You requested to disable Channel {channel} which is not supported. Use '1' or '2'.")
         self.inst.write(f'C{channel}:OUTP OFF')
         return()
+
+
+if __name__=='__main__':
+    bk = BK4054('USB0::62700::60984::575A23113::0::INSTR')

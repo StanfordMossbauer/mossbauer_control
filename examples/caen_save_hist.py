@@ -1,64 +1,54 @@
 
 import time
-from mossbauer_control.instruments import CAEN
-from mossbauer_control.motor import Motor
+import os
+from mossbauer_control.instruments import CAEN, Agilent, HP33120A, PS2000, BK4060B
+#from mossbauer_control.motor import Motor
+from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+import numpy as np
 
-motor = Motor( agilent = "GPIB0::14::INSTR",arduino = "/dev/ttyACM1")
-caen = CAEN("/home/mossbauer_lab/mossbauer_control/caen_configs/co57_config")
+plot = True
+channels = [1]
 
-savedir = r'/home/mossbauer_lab/Data/'
+caen = CAEN("/home/mossbauer/mossbauer_control/caen_configs/co57_config_2ch_noskim")
+gate = HP33120A("GPIB::15::INSTR")
+channel = BK4060B('USB0::62700::60984::575A23113::INSTR')
 
-integration_time = 100
+gate.mode = "DC"
+gate.offset = 5
 
-velocity = 5  #only positive velocities!
-
-if velocity == 0:
-	total_time = integration_time
-	digi.timed_acquire(integration_time)
-
-else:
-	total_time = 0
-
-	while total_time < integration_time:
-		motor.velocity = velocity
-		motor.start()
-
-		while motor.flagA is False:
-			 	time.sleep(0.01)
-
-		caen.start()
-
-		t1 = time.time()
-		while motor.flagB is True:
-		    time.sleep(0.01)       
-		total_time += (time.time()-t1)
-
-		caen.stop()
-
-		time.sleep(0.1)
-		motor.stop()
-
-		#now go backwards same velocity
-
-		motor.velocity = -5
-
-		motor.start()
-		while motor.flagA is True:
-		    time.sleep(0.01)
-		            
-		time.sleep(0.1)
-		motor.stop()
+channel.active = 2
+channel.mode = "DC"
+channel.offset = 5 
 
 
+directory = "/home/mossbauer/Data/{}_histograms/".format(time.strftime("%Y%m%d"))
+
+if not os.path.isdir(directory): os.mkdir(directory)
+    
+absorber = 'noabsorber'
+integration_time = 1000
+detector_distance = 17 #in
+
+print('integrating {} seconds, will finish at {}'.format(integration_time, datetime.now() + timedelta(seconds=integration_time)))
+
+caen.timed_acquire(integration_time)
 caen.update_count()
 
 
+h = []
 
-filename  = 'Hist_skim_550_1200_v_{:.2f}_t_{:.1f}_FeCy.txt'.format(velocity, total_time)
+for channel in channels:
+	print('rate is {:.2f} +/- {:.2f} Hz'.format(
+        caen.count[channel]/integration_time,
+        np.sqrt(caen.count[channel])/integration_time,
+    ))
+	filename  = 'Hist_{}_{}_{}s_{}in.txt'.format(channel, absorber, integration_time,detector_distance)
+	h.append(caen.histogram(channel=0, savefile = directory+filename))
 
-print('rate is {:.2f} Hz'.format(caen.count/total_time))
-h = caen.histogram( savefile = savedir+filename, skim_lim_lower = 500, skim_lim_upper = 1250)
-
+	if plot:
+		plt.plot(h[-1])
+plt.show()
 
 caen.close()
-motor.close()
+
