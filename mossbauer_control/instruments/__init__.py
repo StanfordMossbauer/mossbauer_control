@@ -9,3 +9,4 @@ from .picoscope.ps2000a import PS2000a
 from .BK4060B import BK4060B
 from .HP5335A import HP5335A
 from .base import MossbauerInstrument
+from .Yoctopuce import Yoctopuce
