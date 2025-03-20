@@ -10,6 +10,8 @@ pip install -e .
 
 ### CAEN DAQ Software
 
+The CAEN DAQ software is based on code from [here](https://github.com/cjpl/caen-suite/tree/master/CAENDigitizer/samples/ReadoutTest_DPP_PHA_x724), with config format etc mostly stolen from [here](https://github.com/cjpl/caen-suite/blob/master/WaveDump/src/WDconfig.c).
+
 This is located under `dpp-readout`. We can always break it back out into its own repo if needed. Install (for anyone using your conda environment) with:
 
 ```

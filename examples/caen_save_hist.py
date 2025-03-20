@@ -26,7 +26,7 @@ directory = "/home/mossbauer/Data/{}_histograms/".format(time.strftime("%Y%m%d")
 
 if not os.path.isdir(directory): os.mkdir(directory)
     
-absorber = 'noabsorber'
+absorber = 'testing new detector'
 integration_time = 1000
 detector_distance = 17 #in
 
