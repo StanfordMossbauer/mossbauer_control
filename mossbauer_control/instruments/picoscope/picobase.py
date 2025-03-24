@@ -21,7 +21,7 @@ import inspect
 import time
 
 import numpy as np
-from collections import Iterable
+from collections.abc import Iterable
 from .error_codes import ERROR_CODES as _ERROR_CODES
 
 
