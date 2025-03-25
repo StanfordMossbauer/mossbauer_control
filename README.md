@@ -13,10 +13,13 @@ pip install -e .
 git pull
 
 ## Push updates
+git config --global credential.helper store #the foirs time you pushk for credentials, but never again!
 
 git add .                                       #adds all modification is directory and subdirectories
 git commit -m "message"
 git push
+
+
 
 ## New drivers
 
