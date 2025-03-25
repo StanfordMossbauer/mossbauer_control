@@ -9,9 +9,9 @@ pip install -e .
 ```
 
 ## Pull updates
-
+```
 git pull
-
+```
 ## Push updates
 
 ```
