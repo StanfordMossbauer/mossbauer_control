@@ -1,0 +1,18 @@
+{
+    "directory": "300s_off_01.bin",
+    "filenameA": "300s_off_01.bin300s_off_01A.bin",
+    "filenameB": "300s_off_01.bin300s_off_01B.bin",
+    "filename": "300s_off_01.bin",
+    "sampling_interval": 5e-05,
+    "sampling_time": 300.0,
+    "channels": [
+        "A",
+        "B"
+    ],
+    "vrange": [
+        0,
+        0.01
+    ],
+    "bitresolution": 16,
+    "description": "this measurement..."
+}
