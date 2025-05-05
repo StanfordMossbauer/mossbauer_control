@@ -1,5 +1,9 @@
 # SRS830 Programming Manual: https://www.thinksrs.com/downloads/pdfs/manuals/SR830m.pdf
 import pyvisa
+import matplotlib.pyplot as plt
+import numpy as np
+import time
+import pandas as pd
 
 # Time constants are in seconds
 TIME_CONSTANTS = {
@@ -19,10 +23,13 @@ SENSITIVITIES = {
 
 
 class SRS830:
-    def __init__(self, gpib_address):
+    def __init__(self, gpib_address=10):
         self.gpib_address = gpib_address
         self.rm = pyvisa.ResourceManager()
-        self.instrument = self.rm.open_resource(f"GPIB::{gpib_address}")
+        self.instrument = self.rm.open_resource(f"GPIB::{gpib_address}", )
+        self.instrument.baud_rate = 9600
+        self.instrument.write("SEND 0") #shot mode (1 for loop mode)
+
 
     def set_sensitivity(self, sensitivity):
         closest_sensitivity = min(SENSITIVITIES.values(), key=lambda x: abs(x - sensitivity))
@@ -30,12 +37,18 @@ class SRS830:
         self.instrument.write(f"SENS {sensitivity}")
         return SENSITIVITIES[sensitivity]
     
+    def get_sensitivity(self):
+        return float(self.instrument.query(f"SENS ?"))
+    
     
     def set_time_constant(self, time_constant):
         closest_time_constant = min(TIME_CONSTANTS.values(), key=lambda x: abs(x - time_constant))
         time_constant = list(TIME_CONSTANTS.keys())[list(TIME_CONSTANTS.values()).index(closest_time_constant)]
         self.instrument.write(f"OFLT {time_constant}")
         return TIME_CONSTANTS[time_constant]
+    
+    def get_time_constant(self):
+        return float(self.instrument.query(f"OFLT ?"))
 
     def set_output_amplitude(self, amplitude):
         self.instrument.write(f"SLVL {amplitude}")
@@ -47,12 +60,89 @@ class SRS830:
     def set_resolution(self, resolution):
         self.instrument.write(f"DDEF 1,{resolution}")
 
-    def read_amplitude(self):
+    def read_X(self):
         return float(self.instrument.query("OUTP? 1"))
 
-    def read_phase(self):
+    def read_Y(self):
         return float(self.instrument.query("OUTP? 2"))
+    
+    def read_R(self):
+        return float(self.instrument.query("OUTP? 3"))
+
+    def read_theta(self):
+        return float(self.instrument.query("OUTP? 4"))
+
+    def read_all(self):
+        res = self.instrument.query("SNAP? 3,4,9")
+        R, theta, f_ref = np.array(res[:-1].split(",")).astype('float')
+        return R, theta, f_ref 
+
+    def reset(self):
+        self.instrument.write('REST')
+    
+    #clear buffer
+    #set reference (internal or extenal)
 
     def close(self):
         self.instrument.close()
         self.rm.close()
+
+
+
+if __name__ == "__main__":
+    #plot of signal
+    
+    srs = SRS830(gpib_address = 10)
+    srs.reset()
+    srs.set_output_amplitude(5)
+    srs.set_sensitivity(100e-6)
+    frequencies = np.logspace(-1, 7, 300)# spaces logarithmically from 10^-1 Hz to 1
+
+    t = np.linspace(0, 30, 10)
+
+    results = []
+
+    for f in frequencies:  #for f in frequencies:
+        srs.set_output_frequency(f)
+        time_const = 15/f
+        srs.set_time_constant(time_const)
+        
+        
+        
+        
+        R,theta, f_ref = srs.read_all()
+
+        sensitivity = srs.get_sensitivity()
+        if R/sensitivity < 0.1:
+            srs.set_sensitivity(2*R)
+        while R/sensitivity >= 1:
+            srs.set_sensitivity(sensitivity*2)
+            sensitivity = srs.get_sensitivity()
+            
+        time.sleep(max(2*time_const,0.1))
+        R,theta, f_ref = srs.read_all()
+
+        results.append(dict(
+            f_ref = f_ref,
+            R = R,
+            theta = theta
+
+        ))
+
+        print(results[-1])
+
+    srs.set_output_frequency(1)
+    srs.set_output_amplitude(1e-5)
+    
+
+    directory = 'C:\\Users\\Mossbauer\\Documents\\data\\20250416_piezo_transfer_functions\\'
+    filename = directory + "smallpiezo_glued_01.csv"
+
+    pd.DataFrame(results).to_csv(filename, index=False)
+    
+    df = pd.DataFrame(results)
+    fig, ax = plt.subplots(2,1)
+    ax[0].semilogx(df['f_ref'], df['theta'])
+    ax[1].loglog(df['f_ref'], df['R'])
+    plt.show()
+    
