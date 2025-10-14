@@ -25,7 +25,7 @@ conn= mysql.connector.connect(host='192.168.2.2',user='writer',password='mossbau
 cur=conn.cursor()
 
 def insert_parameters(cursor, t_dt, f_f, f_A, s_c):
-	cursor.execute("INSERT INTO RTD (`TIME`, `FAST_FREQUENCY`, \
+	cursor.execute("INSERT INTO parameters (`TIME`, `FAST_FREQUENCY`, \
      `FAST_AMPLITUDE`,`SLOW_CURRENT`) VALUES (%s, %s, %s, %s)",\
          (t_dt, float(f_f), float(f_A),float(s_c)))
 
