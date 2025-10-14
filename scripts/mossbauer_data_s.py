@@ -19,7 +19,6 @@ def insert_fast(cursor, t_dt, data_V, R, theta):
 		(t_dt, float(data_V),float(R), float(theta))
 	)
 
-
 # Mysql connectors;
 conn= mysql.connector.connect(host='192.168.2.2',user='writer',password='mossbauer_writer',database='slowcontrol')
 cur=conn.cursor()
@@ -162,5 +161,21 @@ while True:
         writer.writerow([timestamp, data_V, R, theta])
 
 
+	try:
+		conn.ping(reconnect=True, attempts=1, delay=0)
+		insert_fast(cur, t_dt, diff_T, abs_T)
+		conn.commit()
+	except mysql.connector.Error as e:
+		print("Connection Issues")
+		try:
+			if conn.is_connected():
+				cur.close()
+				conn.close()
+			conn= mysql.connector.connect(host='192.168.2.2',user='writer',password='mossbauer_writer',database='slowcontrol')
+			cur = conn.cursor()
+			insert_fast(cur, t_dt, diff_T, abs_T)
+			conn.commit()
+		except: 
+			pass	
 
 
