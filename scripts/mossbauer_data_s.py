@@ -152,6 +152,7 @@ while True:
 	data_V = voltmeter.get_data()
 	#data_T = thermo.get_data()
 	timestamp = time.time()
+	t_dt = datetime.now()
 	R, theta, f_ref = srs.read_all()
 
 	# Write data to file
@@ -163,7 +164,7 @@ while True:
 
 	try:
 		conn.ping(reconnect=True, attempts=1, delay=0)
-		insert_fast(cur, t_dt, diff_T, abs_T)
+		insert_fast(cur, t_dt,  data_V, R, theta)
 		conn.commit()
 	except mysql.connector.Error as e:
 		print("Connection Issues")
@@ -173,7 +174,7 @@ while True:
 				conn.close()
 			conn= mysql.connector.connect(host='192.168.2.2',user='writer',password='mossbauer_writer',database='slowcontrol')
 			cur = conn.cursor()
-			insert_fast(cur, t_dt, diff_T, abs_T)
+			insert_fast(cur, t_dt,  data_V, R, theta)
 			conn.commit()
 		except: 
 			pass	
