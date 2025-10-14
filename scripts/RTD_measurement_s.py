@@ -102,6 +102,7 @@ while True:
 			conn= mysql_connector.connect(host='192.168.1.2',user='writer',password='mossbauer_writer',database='slowcontrol')
 			cur = conn.cursor()
 			insert_rtd(cur, t_dt, diff_T, abs_T)
-		pass	
+		except: 
+			pass	
 	
 
