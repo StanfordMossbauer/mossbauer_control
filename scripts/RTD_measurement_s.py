@@ -4,7 +4,7 @@ import numpy as np
 import csv 
 import os
 import pandas as pd
-from datetime import datetime
+from datetime import datetime,timezone
 
 
 import mysql.connector
@@ -86,7 +86,7 @@ while True:
 	#print(diff_T, abs_T)
 
 	timestamp = time.time()
-	t_dt    = datetime.now()
+	t_dt    = datetime.now(timezone.utc)
 	with open(file_path, mode='a', newline='') as file:
 		writer = csv.writer(file)
 		writer.writerow([timestamp, diff_T, abs_T])

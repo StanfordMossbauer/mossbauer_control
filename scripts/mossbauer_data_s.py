@@ -5,7 +5,7 @@ import csv
 import os
 from pyvisa.constants import ControlFlow, Parity, StopBits
 import pandas as pd
-from datetime import datetime
+from datetime import datetime,timezone
 
 
 import mysql.connector
@@ -70,7 +70,7 @@ with open(file_path, mode='w', newline='') as file:
 
 while True:
 	# Check if the date has changed
-	now = datetime.now()
+	now = datetime.now(timezone.utc)
 	if now.date() != current_day:
 		# New day, create a new file
 		current_day = now.date()

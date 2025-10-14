@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import datetime,timezone
 
 from mossbauer_control.instruments import DS360
 from mossbauer_control.instruments import K263
@@ -96,7 +96,7 @@ calibrator.operate()
 i=0
 while True:
     calibrator.set_current(current)
-    t_t=datetime.now()
+    t_t=datetime.now(timezone.utc)
     insert_data(conn,cur,t_t,freq,amp,current)
     #dc205.set_voltage(2)
     time.sleep(500)
