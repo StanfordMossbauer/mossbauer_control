@@ -19,7 +19,7 @@ from mossbauer_control.instruments import dc205
 
 def insert_rtd(cursor, t_dt, diff_T, abs_T):
 	cursor.execute(
-		"INSERT INTO RTD (`time`, `diff_T`, `abs_T`) VALUES (%s, %s, %s)",
+		"INSERT INTO RTD (`TIME`, `diff_T`, `abs_T`) VALUES (%s, %s, %s)",
 		(t_dt, float(diff_T), float(abs_T))
 	)
 
