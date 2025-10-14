@@ -70,7 +70,7 @@ with open(file_path, mode='w', newline='') as file:
 
 while True:
 	# Check if the date has changed
-	now = datetime.now(timezone.utc)
+	now = datetime.now()
 	if now.date() != current_day:
 		# New day, create a new file
 		current_day = now.date()
@@ -87,7 +87,7 @@ while True:
 	data_V = voltmeter.get_data()
 	#data_T = thermo.get_data()
 	timestamp = time.time()
-	t_dt = datetime.now()
+	t_dt = datetime.now(timezone.utc)
 	R, theta, f_ref = srs.read_all()
 
 	# Write data to file

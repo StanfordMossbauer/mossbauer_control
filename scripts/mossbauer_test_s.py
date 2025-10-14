@@ -101,7 +101,7 @@ while True:
     #dc205.set_voltage(2)
     time.sleep(500)
     
-    t_t=datetime.now()
+    t_t=datetime.now(timezone.utc)
     calibrator.set_current(-1*current)
     insert_data(conn,cur,t_t,freq,amp,-1*current)
     #dc205.set_voltage(-2)
