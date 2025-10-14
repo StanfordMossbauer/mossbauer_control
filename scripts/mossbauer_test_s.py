@@ -4,6 +4,8 @@ from mossbauer_control.instruments import DS360
 from mossbauer_control.instruments import K263
 from mossbauer_control.instruments import bnc555
 
+# This script is used to set up parameters; 
+
 
 drive = DS360(gpib_address = 8)
 # Fast Stage function generator 
@@ -54,6 +56,8 @@ calibrator.set_current_mode()
 calibrator.set_current_range()
 calibrator.set_current(5E-9)
 calibrator.operate()
+
+
 #dc205.output_on()
 i=0
 while True:

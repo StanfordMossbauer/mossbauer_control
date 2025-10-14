@@ -8,8 +8,8 @@ import pandas as pd
 from datetime import datetime
 
 
-from keithley_class import keithley
-from SRS830 import SRS830
+from mossbauer_control.instruments import keithley
+from mossbauer_control.instruments import SRS830
 
 
 
