@@ -42,10 +42,10 @@ ps.close()
 
 
 
-directory = 'C:\\Users\\Mossbauer\\Documents\\data\\20250424_SRSDS2360_noise\\'
-filename = directory+ "400s_DC_0V_03.bin"
-filenameA= directory + "400s_DC_0V_03A.bin"
-filenameB= directory + "400s_DC_0V_03B.bin"
+directory = 'C:\\Users\\Mossbauer\\Documents\\data\\0508_test\\'
+filename = directory+ "400s_10nA_01.bin"
+filenameA= directory + "400s_10nA_01.bin"
+filenameB= directory + "400s_10nA_01.bin"
 saveFileA = open(filenameA, 'wb')
 saveFileB = open(filenameB, 'wb')
 

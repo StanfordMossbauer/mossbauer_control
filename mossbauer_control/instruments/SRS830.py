@@ -90,59 +90,85 @@ class SRS830:
 
 
 if __name__ == "__main__":
-    #plot of signal
-    
+    #run for 40Hz drive
     srs = SRS830(gpib_address = 10)
     srs.reset()
-    srs.set_output_amplitude(5)
-    srs.set_sensitivity(100e-6)
-    frequencies = np.logspace(-1, 7, 300)# spaces logarithmically from 10^-1 Hz to 1
-
-    t = np.linspace(0, 30, 10)
-
+    srs.set_sensitivity(100) #added
     results = []
-
-    for f in frequencies:  #for f in frequencies:
-        srs.set_output_frequency(f)
-        time_const = 15/f
-        srs.set_time_constant(time_const)
-        
-        
-        
-        
-        R,theta, f_ref = srs.read_all()
-
-        sensitivity = srs.get_sensitivity()
-        if R/sensitivity < 0.1:
-            srs.set_sensitivity(2*R)
-        while R/sensitivity >= 1:
-            srs.set_sensitivity(sensitivity*2)
-            sensitivity = srs.get_sensitivity()
-            
-        time.sleep(max(2*time_const,0.1))
+    f=40
+    time_const = 15/f
+    srs.set_time_constant(time_const)
+    i = 0
+    while i <10000:
         R,theta, f_ref = srs.read_all()
 
         results.append(dict(
             f_ref = f_ref,
             R = R,
             theta = theta
+            ))
+        i+=1
 
-        ))
-
-        print(results[-1])
-
-    srs.set_output_frequency(1)
-    srs.set_output_amplitude(1e-5)
-    
-
-    directory = 'C:\\Users\\Mossbauer\\Documents\\data\\20250416_piezo_transfer_functions\\'
-    filename = directory + "smallpiezo_glued_01.csv"
+    directory = 'C:\\Users\\Mossbauer\\Documents\\data\\0917\\'
+    filename = directory + "test_SRS830.csv"
 
     pd.DataFrame(results).to_csv(filename, index=False)
+
+
+
+    # #plot of signal
     
-    df = pd.DataFrame(results)
-    fig, ax = plt.subplots(2,1)
-    ax[0].semilogx(df['f_ref'], df['theta'])
-    ax[1].loglog(df['f_ref'], df['R'])
-    plt.show()
+    # srs = SRS830(gpib_address = 10)
+    # srs.reset()
+    # srs.set_output_amplitude(5)
+    # srs.set_sensitivity(100e-6)
+    # frequencies = np.logspace(-1, 7, 300)# spaces logarithmically from 10^-1 Hz to 1
+
+    # t = np.linspace(0, 30, 10)
+
+    # results = []
+
+    # for f in frequencies:  #for f in frequencies:
+    #     srs.set_output_frequency(f)
+    #     time_const = 15/f
+    #     srs.set_time_constant(time_const)
+        
+        
+        
+        
+    #     R,theta, f_ref = srs.read_all()
+
+    #     sensitivity = srs.get_sensitivity()
+    #     if R/sensitivity < 0.1:
+    #         srs.set_sensitivity(2*R)
+    #     while R/sensitivity >= 1:
+    #         srs.set_sensitivity(sensitivity*2)
+    #         sensitivity = srs.get_sensitivity()
+            
+    #     time.sleep(max(2*time_const,0.1))
+    #     R,theta, f_ref = srs.read_all()
+
+    #     results.append(dict(
+    #         f_ref = f_ref,
+    #         R = R,
+    #         theta = theta
+
+    #     ))
+
+    #     print(results[-1])
+
+    # srs.set_output_frequency(1)
+    # srs.set_output_amplitude(1e-5)
+    
+
+    # directory = 'C:\\Users\\Mossbauer\\Documents\\data\\20250416_piezo_transfer_functions\\'
+    # filename = directory + "smallpiezo_glued_01.csv"
+
+    # pd.DataFrame(results).to_csv(filename, index=False)
+    
+    # df = pd.DataFrame(results)
+    # fig, ax = plt.subplots(2,1)
+    # ax[0].semilogx(df['f_ref'], df['theta'])
+    # ax[1].loglog(df['f_ref'], df['R'])
+    # plt.show()
     
