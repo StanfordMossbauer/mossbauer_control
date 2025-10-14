@@ -20,7 +20,7 @@ from mossbauer_control.instruments import dc205
 def insert_rtd(cursor, t_dt, diff_T, abs_T):
 	cursor.execute(
 		"INSERT INTO RTD (`time`, `diff_T`, `abs_T`) VALUES (%s, %s, %s)",
-		(t_dt, Decimal(str(diff_T)), Decimal(str(abs_T)))
+		(t_dt, float(diff_T), float(abs_T))
 	)
 
 #or we can create a new csv file every day
@@ -45,13 +45,13 @@ read_interval = 1
 # It is fine to write down the password here because 
 # - The database is only accessible via LAN;
 # - The writer could only read and "add" data to the database, could not delete; 
-conn= mysql.connector.connect(host='192.168.1.2',user='writer',password='mossbauer_writer',database='slowcontrol')
+conn= mysql.connector.connect(host='192.168.2.2',user='writer',password='mossbauer_writer',database='slowcontrol')
 cur=conn.cursor()
 
 
 # CSV Parameters 
 # Folder to save CSVs
-base_dir = r'C:\Users\mossbauer\Documents\data\1008'
+base_dir = r'C:\Users\mossbauer\Documents\data\1009'
 os.makedirs(base_dir, exist_ok=True)
 # Track current file date
 current_day = datetime.now().date()
@@ -94,14 +94,17 @@ while True:
 	try:
 		conn.ping(reconnect=True, attempts=1, delay=0)
 		insert_rtd(cur, t_dt, diff_T, abs_T)
+		conn.commit()
 	except mysql.connector.Error as e:
+		print("Connection Issues")
 		try:
 			if conn.is_connected():
 				cur.close()
 				conn.close()
-			conn= mysql.connector.connect(host='192.168.1.2',user='writer',password='mossbauer_writer',database='slowcontrol')
+			conn= mysql.connector.connect(host='192.168.2.2',user='writer',password='mossbauer_writer',database='slowcontrol')
 			cur = conn.cursor()
 			insert_rtd(cur, t_dt, diff_T, abs_T)
+			conn.commit()
 		except: 
 			pass	
 	
