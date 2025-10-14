@@ -49,7 +49,7 @@ voltmeter.initialize()
 #thermo.store_raw_readings()
 #thermo.cont_operation()
 #thermo.initialize()
-    
+	
 # data_V = []
 # data_T = []
 # data_theta = []
@@ -114,10 +114,10 @@ voltmeter.initialize()
 
 #or we can create a new csv file every day
 def get_file_path(base_dir):
-    """Generate file path with current date"""
-    date_str = datetime.now().strftime("%Y-%m-%d")
-    filename = f"all_closed{date_str}.csv"
-    return os.path.join(base_dir, filename)
+	"""Generate file path with current date"""
+	date_str = datetime.now().strftime("%Y-%m-%d")
+	filename = f"all_closed{date_str}.csv"
+	return os.path.join(base_dir, filename)
 
 # Folder to save CSVs
 base_dir = r'C:\Users\mossbauer\Documents\data\1008'
@@ -129,36 +129,36 @@ file_path = get_file_path(base_dir)
 
 # Write header once per file
 with open(file_path, mode='w', newline='') as file:
-    writer = csv.writer(file)
-    #writer.writerow(['time', 'data V', 'data T', 'amp', 'theta'])
-    writer.writerow(['time', 'data V',  'amp', 'theta'])
+	writer = csv.writer(file)
+	#writer.writerow(['time', 'data V', 'data T', 'amp', 'theta'])
+	writer.writerow(['time', 'data V',  'amp', 'theta'])
 
 while True:
-    # Check if the date has changed
-    now = datetime.now()
-    if now.date() != current_day:
-        # New day, create a new file
-        current_day = now.date()
-        file_path = get_file_path(base_dir)
-        with open(file_path, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            #writer.writerow(['time', 'data V', 'data T', 'amp', 'theta'])
-            writer.writerow(['time', 'data V',  'amp', 'theta'])
+	# Check if the date has changed
+	now = datetime.now()
+	if now.date() != current_day:
+		# New day, create a new file
+		current_day = now.date()
+		file_path = get_file_path(base_dir)
+		with open(file_path, mode='w', newline='') as file:
+			writer = csv.writer(file)
+			#writer.writerow(['time', 'data V', 'data T', 'amp', 'theta'])
+			writer.writerow(['time', 'data V',  'amp', 'theta'])
 
-    # Sleep before getting data
-    time.sleep(1)
+	# Sleep before getting data
+	time.sleep(1)
 
-    # Get data
-    data_V = voltmeter.get_data()
-    #data_T = thermo.get_data()
-    timestamp = time.time()
-    R, theta, f_ref = srs.read_all()
+	# Get data
+	data_V = voltmeter.get_data()
+	#data_T = thermo.get_data()
+	timestamp = time.time()
+	R, theta, f_ref = srs.read_all()
 
-    # Write data to file
-    with open(file_path, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        #writer.writerow([timestamp, data_V, data_T, R, theta])
-        writer.writerow([timestamp, data_V, R, theta])
+	# Write data to file
+	with open(file_path, mode='a', newline='') as file:
+		writer = csv.writer(file)
+		#writer.writerow([timestamp, data_V, data_T, R, theta])
+		writer.writerow([timestamp, data_V, R, theta])
 
 
 	try:
