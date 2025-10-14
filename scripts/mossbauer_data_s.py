@@ -8,8 +8,21 @@ import pandas as pd
 from datetime import datetime
 
 
+import mysql.connector
+
 from mossbauer_control.instruments import keithley
 from mossbauer_control.instruments import SRS830
+
+def insert_fast(cursor, t_dt, data_V, R, theta):
+	cursor.execute(
+		"INSERT INTO FAST (`time`, `VOLTMETER`, `SRS_R`,`SRS_THETA`) VALUES (%s, %s, %s)",
+		(t_dt, float(data_V),float(R), float(theta))
+	)
+
+
+# Mysql connectors;
+conn= mysql.connector.connect(host='192.168.2.2',user='writer',password='mossbauer_writer',database='slowcontrol')
+cur=conn.cursor()
 
 
 
