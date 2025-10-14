@@ -8,7 +8,7 @@ from pyvisa.constants import ControlFlow, Parity, StopBits
 import pandas as pd
 
 
-class bnc:
+class bnc555:
     def __init__(self, gpib_address=1):
         self.gpib_address = gpib_address
         self.rm = pyvisa.ResourceManager()
