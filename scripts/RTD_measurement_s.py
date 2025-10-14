@@ -45,7 +45,7 @@ read_interval = 1
 # It is fine to write down the password here because 
 # - The database is only accessible via LAN;
 # - The writer could only read and "add" data to the database, could not delete; 
-conn= mysql_connector.connect(host='192.168.1.2',user='writer',password='mossbauer_writer',database='slowcontrol')
+conn= mysql.connector.connect(host='192.168.1.2',user='writer',password='mossbauer_writer',database='slowcontrol')
 cur=conn.cursor()
 
 
@@ -99,7 +99,7 @@ while True:
 			if conn.is_connected():
 				cur.close()
 				conn.close()
-			conn= mysql_connector.connect(host='192.168.1.2',user='writer',password='mossbauer_writer',database='slowcontrol')
+			conn= mysql.connector.connect(host='192.168.1.2',user='writer',password='mossbauer_writer',database='slowcontrol')
 			cur = conn.cursor()
 			insert_rtd(cur, t_dt, diff_T, abs_T)
 		except: 
