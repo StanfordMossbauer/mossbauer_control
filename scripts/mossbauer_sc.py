@@ -235,15 +235,15 @@ class slowcontrol():
 		self.dc205_stopper = self.RTD_Flip()
 		
 		# setup keithley slow stage ; 
-		self.voltmeter.experimental_voltmeter_setup()
+		self.voltmeter.experiment_voltmeter_setup()
 		self.volt_stopper = self.start_volt_latest(0.2)
 		
 		# setup keithley RTD; 
-		self.thermo.experimental_thermo_setup()
+		self.thermo.experiment_thermo_setup()
 		self.thermo_stopper=self.start_thermo_latest(0.2)
 		
 		# setup SRS fast stage;
-		self.srs.experimental_setup()
+		self.srs.experiment_setup()
 		self.srs_stopper=self.start_srs_latest(0.2)
 		
 		# setup yotocpuce;

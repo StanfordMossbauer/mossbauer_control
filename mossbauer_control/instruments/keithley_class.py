@@ -129,12 +129,12 @@ class keithley:
         self.write(":SENS:CHAN 2")
         time.sleep(1)
         ch2_reading = float(self.query(":READ?"))
-        print(ch2_reading)
+        #print(ch2_reading)
         time.sleep(1)
         self.write(":SENS:CHAN 1")
         time.sleep(1)
         ch1_reading = float(self.query(":READ?"))
-        print(ch1_reading)
+        #print(ch1_reading)
         
         return ch1_reading, ch2_reading
     
@@ -169,14 +169,14 @@ class keithley:
         
         return ch1_reading, ch2_reading
     
-    def experimental_voltmeter_setup(self): 
+    def experiment_voltmeter_setup(self): 
         self.set_voltage_mode()
         self.clear_buffer()
         self.store_raw_readings()
         self.cont_operation()
         self.initialize()
         
-    def experimental_thermo_setup(self):
+    def experiment_thermo_setup(self):
         return 
     
 
