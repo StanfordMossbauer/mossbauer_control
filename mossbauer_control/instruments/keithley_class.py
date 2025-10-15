@@ -27,7 +27,7 @@ class keithley:
         self.instrument.write(string)
     
     def read(self):
-        r = self.instrument.write(":READ?")
+        r = float(self.instrument.query(":READ?"))
         return r
 
     def query(self, string):
@@ -100,6 +100,10 @@ class keithley:
 
     def get_buffer_data(self):
         self.query("TRAC:DATA?")
+
+    def set_channel(self,chan):
+        self.write(f":SENS:CHAN {chan}")
+
      
 
 
@@ -125,10 +129,43 @@ class keithley:
         self.write(":SENS:CHAN 2")
         time.sleep(1)
         ch2_reading = float(self.query(":READ?"))
+        print(ch2_reading)
         time.sleep(1)
         self.write(":SENS:CHAN 1")
         time.sleep(1)
         ch1_reading = float(self.query(":READ?"))
+        print(ch1_reading)
+        
+        return ch1_reading, ch2_reading
+    
+    def measure_both_v2(self):  #not averaged
+        self.cont_operation(status='OFF')
+
+        self.set_channel(1)
+        time.sleep(0.04)
+        ch1_reading = self.read()
+        self.set_channel(2)
+        time.sleep(0.04)
+        ch2_reading = self.read()
+        #print(ch2_reading)
+        
+        return ch1_reading, ch2_reading
+    
+    def measure_both_v3(self):  #not averaged
+        self.cont_operation(status='OFF')
+
+        self.set_channel(1)
+        time.sleep(0.1)
+
+        for i in range(10):
+            t =time.time()
+            ch1_reading = self.read()
+            print(ch1_reading, time.time()-t)
+        time.sleep(0.1)
+        self.set_channel(2)
+        time.sleep(0.1)
+        ch2_reading = self.read()
+        print(ch2_reading)
         
         return ch1_reading, ch2_reading
         
@@ -136,6 +173,12 @@ class keithley:
     
 
 if __name__=='__main__':
+
+    thermo = keithley(gpib_address = 7)
+    result = thermo.measure_both_v2()
+    #print(result)
+
+
 
     # 
     
@@ -175,52 +218,57 @@ if __name__=='__main__':
     # plt.show()
 
     #when also measuring thermocouples
-    thermo = keithley(gpib_address = 7)
-    voltmeter = keithley(gpib_address = 6)
-    thermo.set_voltage_mode()
-    voltmeter.set_voltage_mode()
 
-    voltmeter.clear_buffer()
-    voltmeter.store_raw_readings()
-    voltmeter.cont_operation()
-    voltmeter.initialize()
 
-    thermo.clear_buffer()
-    thermo.store_raw_readings()
-    thermo.cont_operation()
-    thermo.initialize()
+    #thermo = keithley(gpib_address = 7)
+    #voltmeter = keithley(gpib_address = 6)
+    #thermo.set_voltage_mode()
+    #voltmeter.set_voltage_mode()
+
+    #voltmeter.clear_buffer()
+    #voltmeter.store_raw_readings()
+    # voltmeter.cont_operation()
+    # voltmeter.initialize()
+
+    # thermo.clear_buffer()
+    # thermo.store_raw_readings()
+    # thermo.cont_operation()
+    # thermo.initialize()
     
-    data_V = []
-    data_T = []
-    timestamps = []
-    start = time.time()
+    # data_V = []
+    # data_T = []
+    # timestamps = []
+    # start = time.time()
 
-    i = 1
-    while i<60:
-        i+=1
-        time.sleep(1)
-        data = voltmeter.get_data()
-        data_V.append(data)
-        data = thermo.get_data()
-        data_T.append(data)
-        timestamps.append(time.time()-start)
+    # i = 1
+    # while i<60:
+    #     i+=1
+    #     time.sleep(1)
+    #     data = voltmeter.get_data()
+    #     data_V.append(data)
+    #     data = thermo.get_data()
+    #     data_T.append(data)
+    #     timestamps.append(time.time()-start)
 
-    df=pd.DataFrame(
-        {'time':timestamps,
-        'data V':data_V,
-        'data T': data_T}
-    )
+    # df=pd.DataFrame(
+    #     {'time':timestamps,
+    #     'data V':data_V,
+    #     'data T': data_T}
+    # )
 
 
-    # Define the full file path
-    save_path = r'C:\Users\mossbauer\Documents\data\0929\keithley_01.csv'
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    df.to_csv(save_path, index=False)
+    # # Define the full file path
+    # save_path = r'C:\Users\mossbauer\Documents\data\0929\keithley_01.csv'
+    # os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    # df.to_csv(save_path, index=False)
 
-    plt.plot(timestamps, data_V, color = 'pink', label = 'strain')
-    plt.plot(timestamps, data_T, color = 'purple', label = 'T')
-    plt.legend()
-    plt.show()
+    # plt.plot(timestamps, data_V, color = 'pink', label = 'strain')
+    # plt.plot(timestamps, data_T, color = 'purple', label = 'T')
+    # plt.legend()
+    # plt.show()
+
+
+
 
 
 

@@ -40,6 +40,10 @@ class dc205:
     def output_on(self):
         self.write("SOUT ON")
 
+    def experiment_setup(self, V=2):
+        self.write("SOUT ON")
+        self.set_voltage(V)
+
 
 if __name__=='__main__':
 

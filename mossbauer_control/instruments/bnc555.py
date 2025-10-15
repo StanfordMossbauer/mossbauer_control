@@ -42,6 +42,7 @@ class bnc555:
         self.instrument.write(f":PULSE0:MODE {mode}")
 
     def set_clock_f(self, period=0.00032):
+        #somehow this is in units of 10 seconds. will figure it out in the future.
         self.instrument.write(f":PULSE0:PER {period}")
 
     def set_ext_trigger(self):
@@ -64,8 +65,30 @@ class bnc555:
     def channel_mode(self, channel, mode='BURST'):
         self.instrument.write(f":PULSE{channel}:CMOD {mode}")
 
+    def experiment_setup(self, f=30, nbursts=5):
+        #note there is an extra division by 10 because this is the weird unit of set_clock_f
+        pulse_period =  int((1/(f*nbursts*2*10)-1e-7)*1e6)/1e6
+        self.setup()   
+        self.reset()
+
+        #configure sys clock for 300Hz from 60Hz trigger
+        self.set_clock_mode('BURST')
+        self.set_ext_trigger()
+        self.enable(0, 'ON')
+        self.set_clock_f(pulse_period)
+        self.burst_count(0, nbursts)
+
+        #set channel 1 for camera trigger
+        self.enable(1, 'ON')
+        self.channel_mode(1, 'BURST')
+        self.burst_count(1, nbursts)
+        self.pulse_width(1, 0.0001)
+        self.pulse_delay(1, 0)
+
+
+
 if __name__=='__main__':
-    bnc = bnc(gpib_address = 1)
+    bnc = bnc555(gpib_address = 1)
 
     bnc.setup()
     bnc.reset()

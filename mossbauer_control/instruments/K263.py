@@ -28,10 +28,16 @@ class K263:
     def stop(self):
         self.instrument.write("O0X")
 
+    def experiment_setup(self):
+        self.set_current_mode()
+        self.set_current_range()
+        self.set_current(1E-10)
+        self.operate()
+
 
 if __name__ == "__main__":
     
-    calibrator = K263(gpib_address = 8)
+    calibrator = K263(gpib_address = 9)
     calibrator.set_current_mode()
     calibrator.set_current_range()
     calibrator.set_current(5E-9)
