@@ -93,7 +93,7 @@ class slowcontrol():
 		self.srs = SRS830(gpib_address = 10)
 		# Fast stage position;
 		
-		self.dc205 = dc205(ASRL="ASRL3::INSTR")
+		self.dc205 = dc205(address="ASRL3::INSTR")
 		# RTD voltage supply 
 		self.thermo = keithley(gpib_address = 7)
 		# RTD readout 
@@ -227,11 +227,11 @@ class slowcontrol():
 		self.bnc.experiment_setup(self.fast_freq, self.nbursts)
 		
 		# Slow stage current source 
-		self.calibrator.experimental_setup()
+		self.calibrator.experiment_setup()
 		self.calibrator_stopper = self.Slow_Flip()
 		
 		# RTD Function Generator; 
-		self.dc205.experimental_setup()
+		self.dc205.experiment_setup()
 		self.dc205_stopper = self.RTD_Flip()
 		
 		# setup keithley slow stage ; 
