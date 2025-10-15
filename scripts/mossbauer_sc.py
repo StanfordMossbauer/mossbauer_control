@@ -306,7 +306,8 @@ class slowcontrol():
 			
 			diff_T = getattr(self, 'latest_diff_T', -1)
 			abs_T  = getattr(self, 'latest_abs_T',-1)
-			
+			rtd_v  = getattr(self, 'RTD_voltage', -1) 
+   	
 			current= getattr(self, 'Slow_current',0)
 			data_V = getattr(self, 'latest_data_V', -1)
 			
