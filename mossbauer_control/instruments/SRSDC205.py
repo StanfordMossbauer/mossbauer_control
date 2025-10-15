@@ -10,14 +10,13 @@ import pandas as pd
 #https://www.thinksrs.com/products/dc205.html
 
 class dc205:
-    def __init__(self):
+    def __init__(self,address="ASRL3::INSTR"):
         self.rm = pyvisa.ResourceManager()
-        self.instrument = self.rm.open_resource("ASRL3::INSTR", )
+        self.instrument = self.rm.open_resource(address, )
 
 
-    def connect(self):
-        rm = pyvisa.ResourceManager()
-        self.instrument = rm.open_resource("ASRL3::INSTR", )
+    def connect(self,address="ASRL3::INSTR",):
+        self.instrument = self.rm.open_resource(address, )
 
     def close(self):
         self.instrument.close()
