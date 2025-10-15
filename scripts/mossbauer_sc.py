@@ -156,7 +156,51 @@ class slowcontrol():
 				self.calibrator.set_current(self.Slow_current)
 				nextT =time.monotonic()+ self.Slow_switch_interval    
 		threading.Thread(target=run, daemon=True).start()
-		return stop  
+		return stop 
+
+ 
+	def start_rtd_flip_and_thermo_poll(self, poll_interval: float = 0.2, settle_s: float = 0.2):
+		stop = threading.Event()
+		
+		def run():
+			now = time.monotonic()
+			next_flip = now + self.RTD_switch_interval
+			next_poll = now + poll_interval
+		
+			while not stop.is_set():
+				target = min(next_flip, next_poll)
+				if stop.wait(max(0.0, target - time.monotonic())):
+					break
+		
+				now = time.monotonic()
+		
+				did_flip = False
+				if now >= next_flip - 1e-9:
+					try:
+						self.RTD_voltage = -self.RTD_voltage
+						self.dc205.set_voltage(self.RTD_voltage)
+					except Exception as e:
+						print(f"[WARN] RTD flip failed: {e}")
+					did_flip = True
+					next_flip += self.RTD_switch_interval
+		
+				if did_flip and settle_s > 0:
+					if stop.wait(settle_s):
+						break
+		
+				try:
+					ch1, ch2 = self.thermo.measure_both()
+					self.latest_diff_T = ch1
+					self.latest_abs_T  = ch2
+				except Exception as e:
+					print(f"[WARN] thermo read failed: {e}")
+		
+				while next_poll <= now + 1e-9:
+					next_poll += poll_interval
+		
+		threading.Thread(target=run, daemon=True).start()
+		return stop
+
 	
 	def start_thermo_latest(self, poll_interval: float = 0.0):
 		stop = threading.Event()
@@ -230,18 +274,21 @@ class slowcontrol():
 		self.calibrator.experiment_setup()
 		self.calibrator_stopper = self.Slow_Flip()
 		
-		# RTD Function Generator; 
-		self.dc205.experiment_setup()
-		self.dc205_stopper = self.RTD_Flip()
+
 		
 		# setup keithley slow stage ; 
 		self.voltmeter.experiment_voltmeter_setup()
 		self.volt_stopper = self.start_volt_latest(0.2)
 		
+  		# RTD Function Generator; 
+		self.dc205.experiment_setup()
+		#self.dc205_stopper = self.RTD_Flip()	
 		# setup keithley RTD; 
 		self.thermo.experiment_thermo_setup()
-		self.thermo_stopper=self.start_thermo_latest(0.2)
-		
+		#self.thermo_stopper=self.start_thermo_latest(0.2)
+		self.rtd_thermo_stopper = self.start_rtd_flip_and_thermo_poll(poll_interval=0.2, settle_s=0.2)
+  
+  
 		# setup SRS fast stage;
 		self.srs.experiment_setup()
 		self.srs_stopper=self.start_srs_latest(0.2)
@@ -295,10 +342,11 @@ class slowcontrol():
 		
 		# Stop the threads; 
 		self.calibrator_stopper.set()
-		self.dc205_stopper.set()
+		#self.dc205_stopper.set()
 		self.volt_stopper.set()
-		self.thermo_stopper.set()
+		#self.thermo_stopper.set()
 		self.srs_stopper.set()
+		self.rtd_thermo_stopper.set()
 		# This function will stop the system;     
 	
 	# Let us integrate the RTD script first; 
