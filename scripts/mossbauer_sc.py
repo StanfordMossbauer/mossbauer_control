@@ -122,17 +122,21 @@ class slowcontrol():
 		# BNC parameters
 		self.nbursts=5 
 		
-		# RTD values;
+		# Latest values;
+		# Keithley Temperature Sensors;
 		self.latest_diff_T=0
 		self.latest_abs_T=0
+		# Keithley slow stage voltage/length;
 		self.latest_data_V=0
+		# Lock-in-amplifier phase and amplitude; 
 		self.latest_A  = 0 
 		self.latest_phi = 0 
 		self.latest_f = 0
 	
-
-	
 	def RTD_Flip(self):
+		'''
+		Deprecated function; 
+  		'''
 		stop = threading.Event()
 		def run():
 			nextT = time.monotonic() + self.RTD_switch_interval  
@@ -146,6 +150,10 @@ class slowcontrol():
 		return stop  
 	
 	def Slow_Flip(self): 
+		'''
+		A background thread that will flip the direction of current of the small stage; 
+  		'''
+		# the stop (thread.event) could be used to stop this thread
 		stop = threading.Event()
 		def run():
 			nextT = time.monotonic() + self.Slow_switch_interval  
@@ -160,6 +168,7 @@ class slowcontrol():
 
  
 	def start_rtd_flip_and_thermo_poll(self, poll_interval: float = 0.2, settle_s: float = 0.2):
+		#Replace the RTD_Flip and start_thermo_latest because we want to synchronize the readout. 
 		stop = threading.Event()
 		
 		def run():
@@ -203,11 +212,15 @@ class slowcontrol():
 
 	
 	def start_thermo_latest(self, poll_interval: float = 0.0):
+		'''
+		deprecated function that is used to readout the absolute temperature and relative temperature;
+  		'''
 		stop = threading.Event()
 		def run():
 			while not stop.is_set():
 				t0 = time.time()
 				try:
+        
 					ch1, ch2 = self.thermo.measure_both()   
 					self.latest_diff_T = ch1 
 					self.latest_abs_T = ch2 
@@ -223,6 +236,9 @@ class slowcontrol():
 		return stop
 	
 	def start_volt_latest(self, poll_interval: float = 0.0):
+		'''
+		Background thread that could read the position of the slow stage out;
+  		'''
 		stop = threading.Event()
 		def run():
 			while not stop.is_set():
@@ -242,6 +258,9 @@ class slowcontrol():
 		return stop	
 
 	def start_srs_latest(self, poll_interval: float = 0.0):
+		'''
+		The srs is the lockin amplifier; 
+  		'''
 		stop = threading.Event()
 		def run():
 			while not stop.is_set():
@@ -265,21 +284,25 @@ class slowcontrol():
 	def setup(self):
 		# This script is mainly used to control the instruments that could output ;
 		
+		# Fast Stage Control and readout 
 		#set up fast stage Function Generator;
 		self.drive.experiment_setup(self.fast_freq,self.nbursts)
-		#set up BNC555
+		# setup SRS fast stage;
+		self.srs.experiment_setup()
+		self.srs_stopper=self.start_srs_latest(0.2)
+		
+  		#set up BNC555, trigger box;
 		self.bnc.experiment_setup(self.fast_freq, self.nbursts)
 		
+		# Slow Stage control and readout 
 		# Slow stage current source 
 		self.calibrator.experiment_setup()
 		self.calibrator_stopper = self.Slow_Flip()
-		
-
-		
 		# setup keithley slow stage ; 
 		self.voltmeter.experiment_voltmeter_setup()
 		self.volt_stopper = self.start_volt_latest(0.2)
 		
+		# RTD control and readout
   		# RTD Function Generator; 
 		self.dc205.experiment_setup()
 		#self.dc205_stopper = self.RTD_Flip()	
@@ -288,10 +311,6 @@ class slowcontrol():
 		#self.thermo_stopper=self.start_thermo_latest(0.2)
 		self.rtd_thermo_stopper = self.start_rtd_flip_and_thermo_poll(poll_interval=0.2, settle_s=0.2)
   
-  
-		# setup SRS fast stage;
-		self.srs.experiment_setup()
-		self.srs_stopper=self.start_srs_latest(0.2)
 		
 		# setup yotocpuce;
 		# Not yet; 
@@ -304,10 +323,10 @@ class slowcontrol():
 			t0 = time.time()
 			ts= datetime.now(timezone.utc)
 			
+			# Use the snapshot to get the current value and then record it.  
 			diff_T = getattr(self, 'latest_diff_T', -1)
 			abs_T  = getattr(self, 'latest_abs_T',-1)
 			rtd_v  = getattr(self, 'RTD_voltage', -1) 
-   	
 			current= getattr(self, 'Slow_current',0)
 			data_V = getattr(self, 'latest_data_V', -1)
 			
@@ -316,7 +335,9 @@ class slowcontrol():
 			phi    = getattr(self, 'latest_phi',-1)
 			f_ref  = getattr(self, 'latest_f',-1)
 			f_set  = getattr(self, 'fast_freq', -1 )
-			
+			# The temperature sensor is also needed; 
+   
+   
 			remain = interval - (time.time() - t0)
 			
 			print(f"[{ts.isoformat()}] V={data_V:.6g}  diff_T={diff_T:.6g}  abs_T={abs_T:.6g} "
@@ -326,7 +347,8 @@ class slowcontrol():
 				diff_T, abs_T,
 				current, data_V,
 				A, A_set, phi, f_ref, f_set)
-				
+			
+			# We have setup the autocommit by default, no need to commit it manually;
 			#self.db.conn.commit()
 			
 			if remain > 0:
