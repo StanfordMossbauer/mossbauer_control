@@ -86,6 +86,11 @@ class SRS830:
     def close(self):
         self.instrument.close()
         self.rm.close()
+    
+    def experimental_setup(self,time_const=10):
+        self.reset()
+        self.set_sensitivity(100) #added
+        self.set_time_constant(time_const)
 
 
 

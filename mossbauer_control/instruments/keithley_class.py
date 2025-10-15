@@ -168,8 +168,16 @@ class keithley:
         print(ch2_reading)
         
         return ch1_reading, ch2_reading
+    
+    def experimental_voltmeter_setup(self): 
+        self.set_voltage_mode()
+        self.clear_buffer()
+        self.store_raw_readings()
+        self.cont_operation()
+        self.initialize()
         
-
+    def experimental_thermo_setup(self):
+        return 
     
 
 if __name__=='__main__':

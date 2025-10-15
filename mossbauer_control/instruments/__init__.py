@@ -9,12 +9,12 @@ from .picoscope.ps4000 import PS4000
 from .BK4060B import BK4060B
 from .HP5335A import HP5335A
 from .base import MossbauerInstrument
-from .Yoctopuce import Yoctopuce
+from ...scripts.Yoctopuce_s import Yoctopuce
 from .SRS830 import SRS830
+
+
+# The instrusments that we are now using 
 from .keithley_class import keithley
-
-
-# The new instruments; 
 from .DS360 import DS360
 from .K263 import K263
 from .bnc555 import bnc555
