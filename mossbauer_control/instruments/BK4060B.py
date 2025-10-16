@@ -8,7 +8,7 @@ Created on Fri Feb 17 17:07:08 2023
 """
 
 import pyvisa
-import usbtmc
+#import usbtmc   to fix. usbtmc was likely working on linux!
 import sys
 import atexit
 

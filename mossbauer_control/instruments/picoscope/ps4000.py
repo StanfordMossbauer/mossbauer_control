@@ -64,13 +64,18 @@ from ctypes import c_int32 as c_enum
 
 from .picobase import _PicoscopeBase
 from ctypes import CFUNCTYPE
+
 callbackFuncType = CFUNCTYPE(None, c_int16, c_int32, c_uint32, c_int16, c_uint32, c_int16, c_int16, c_void_p)
 
+#import os
+#print(os.environ["PATH"])
 
 class PS4000(_PicoscopeBase):
     """The following are low-level functions for the PS4000."""
 
+    
     LIBNAME = "ps4000"
+    LIBNAME = "C:\\Program Files\\Pico Technology\\SDK\\lib\\ps4000"
 
     MAX_VALUE = 32764
     MIN_VALUE = -32764

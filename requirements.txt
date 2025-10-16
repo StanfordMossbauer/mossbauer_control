@@ -1,10 +1,23 @@
+<<<<<<< HEAD
 
 numpy
 PyVISA
+=======
+matplotlib
+moku
+numpy
+pexpect
+pyvisa
+>>>>>>> 0c655e8a86d3683ab52f478d1683e6a9bb034109
 setuptools
 serial
 termplotlib
 tqdm
 scipy
 datetime
+<<<<<<< HEAD
 python-usbtmc
+=======
+usbtmc
+yoctopuce
+>>>>>>> 0c655e8a86d3683ab52f478d1683e6a9bb034109

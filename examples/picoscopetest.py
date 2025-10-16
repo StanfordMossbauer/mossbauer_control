@@ -12,7 +12,7 @@ ps.setChannel(channel='B', coupling='DC', VRange=10, VOffset=0.0, enabled=True)
 
 si = ps.setSamplingInterval(5e-3,10)
 
-ps.setSimpleTrigger(trigSrc="B",threshold_V= 1.0,direction="Rising",delay=0,enabled=True,timeout_ms=100000)   
+#ps.setSimpleTrigger(trigSrc="B",threshold_V= 1.0,direction="Rising",delay=0,enabled=True,timeout_ms=100000)   
 ps.runBlock()
 
 ps.waitReady()
