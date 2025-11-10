@@ -48,12 +48,12 @@ class DS360:
 if __name__=='__main__':
 
     drive = DS360(gpib_address = 8)
+    amp = 6.579
+    offset_V = amp/2
     drive.set_sine()
-    drive.set_frequency(1)
-    #drive.set_amplitude(8)
-    drive.set_amplitude(4)
-    drive.set_offset(0)
-    #drive.set_offset(4)
+    drive.set_frequency(30)
+    drive.set_amplitude(amp)
+    drive.set_offset(offset_V)
     drive.output_on()
 
     #the amplitude settings dont work, look at jupyter

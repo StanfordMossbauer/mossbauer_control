@@ -64,7 +64,7 @@ class keithley:
     def filter_off(self):
         self.write(':SENS:VOLT:DC:DFIL:STAT OFF')
 
-    def filter_on(self, samples): #samples can be between 1-100, will be averaged over
+    def filter_on(self, samples): #samples can be between 1-100, will be averaged over, digital filter
         self.write(f':SENS:VOLT:DC:DFIL:COUN {samples}')
 
     def set_delay_trigger(self, t): #given in seconds
@@ -103,6 +103,9 @@ class keithley:
 
     def set_channel(self,chan):
         self.write(f":SENS:CHAN {chan}")
+
+    def analog_filter(self, chan, function= "VOLT", status='OFF'):
+        self.write(f":SENS:{function}:CHAN{chan}:LPAS {status}")
 
      
 
@@ -174,7 +177,20 @@ class keithley:
         self.clear_buffer()
         self.store_raw_readings()
         self.cont_operation()
-        self.initialize()
+        #self.initialize() we dont need that when we have continous operation
+
+    def voltmeter_test(self): 
+        self.set_voltage_mode()
+        self.clear_buffer()
+        self.store_raw_readings()
+        #self.filter_on(10) only digital filter
+        self.analog_filter(1, 'VOLT', 'ON')
+        self.read_rate(5)
+        self.cont_operation()
+
+        #self.initialize()
+        
+
         
     def experiment_thermo_setup(self):
         return 
@@ -183,7 +199,8 @@ class keithley:
 if __name__=='__main__':
 
     thermo = keithley(gpib_address = 7)
-    result = thermo.measure_both_v2()
+    voltmeter = keithley(gpib_address=6)
+    #result = thermo.measure_both_v2()
     #print(result)
 
 
@@ -192,35 +209,35 @@ if __name__=='__main__':
     
 
     
-    # voltmeter.set_voltage_mode()
+    voltmeter.set_voltage_mode()
 
-    # voltmeter.clear_buffer()
-    # voltmeter.store_raw_readings()
-    # voltmeter.cont_operation()
-    # voltmeter.initialize()
+    voltmeter.clear_buffer()
+    voltmeter.store_raw_readings()
+    voltmeter.cont_operation()
+    voltmeter.initialize()
     
-    # data_list = []
-    # timestamps = []
-    # start = time.time()
+    data_list = []
+    timestamps = []
+    start = time.time()
 
-    # i = 1
-    # while i<10:
-    #     i+=1
-    #     time.sleep(1)
-    #     data = voltmeter.get_data()
-    #     data_list.append(data)
-    #     timestamps.append(time.time()-start)
+    i = 1
+    while i<200:
+        i+=1
+        time.sleep(1)
+        data = voltmeter.get_data()
+        data_list.append(data)
+        timestamps.append(time.time()-start)
 
-    # df=pd.DataFrame(
-    #     {'time':timestamps,
-    #     'data':data_list}
-    # )
+    df=pd.DataFrame(
+        {'time':timestamps,
+        'data':data_list}
+    )
 
 
-    # # Define the full file path
-    # save_path = r'C:\Users\mossbauer\Documents\data\0811\test_trigger.csv'
-    # os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    # df.to_csv(save_path, index=False)
+    # Define the full file path
+    save_path = r'C:\Users\mossbauer\Documents\data\1107\test_strain_small_7V_2.csv'
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    df.to_csv(save_path, index=False)
 
     # plt.plot(timestamps, data_list, color = 'purple')
     # plt.show()

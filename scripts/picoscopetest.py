@@ -1,19 +1,20 @@
 from mossbauer_control.instruments import PS4000
+from mossbauer_control.instruments import PS2000
 import matplotlib.pyplot as plt
 import numpy as np
 import json
 
-ps = PS4000()
+ps = PS2000()
 
 channels = ["A", "B"]
 #channels = ["A"]
-vrange = [0, 0.01] #set in V
+vrange = [-5, 5] #set in V
 #print(ps.getUnitInfo(4))
 
 for i, ch in enumerate(channels):
     ps.setChannel(channel=ch, coupling='AC', VRange=vrange[i], VOffset=0.0, enabled=True) #set to AC for the voltage source
 
-si = ps.setSamplingInterval(1/20e3,400)    #sampling rate, number of points
+si = ps.setSamplingInterval(1/20e3,10)    #sampling rate, number of points
 ps.memorySegments(1)
 ps.setNoOfCaptures(1)
 
@@ -42,7 +43,7 @@ ps.close()
 
 
 
-directory = 'C:\\Users\\Mossbauer\\Documents\\data\\0508_test\\'
+directory = 'C:\\Users\\Mossbauer\\Documents\\data\\1104_test\\'
 filename = directory+ "400s_10nA_01.bin"
 filenameA= directory + "400s_10nA_01.bin"
 filenameB= directory + "400s_10nA_01.bin"
@@ -73,17 +74,17 @@ with open(jfile, 'w') as outfile:
 
 
 
-### DATA CAN BE READ AS:
-#with open(jfile) as f:   #or put path here
-#    params = json.load(f)
-#data  = np.fromfile(params['filenameA'],dtype=np.int16).reshape(-1,len(params['channels'])).T
-#data  = np.fromfile(jfile, dtype=np.int16).reshape(-1,len(params['channels'])).T
+## DATA CAN BE READ AS:
+with open(jfile) as f:   #or put path here
+   params = json.load(f)
+data  = np.fromfile(params['filenameA'],dtype=np.int16).reshape(-1,len(params['channels'])).T
+data  = np.fromfile(jfile, dtype=np.int16).reshape(-1,len(params['channels'])).T
 
-#t = np.arange(0,len(data[0]))*params['sampling_interval']
-#data_A_V = data[0]*vrange[0]/2**(params['bitresolution']-1) 
-#data_B_V = data[1]*vrange[1]/2**(params['bitresolution']-1) 
-#plt.figure()
-#plt.plot(t,data_A_V) #mV
-#plt.figure()
-#plt.plot(t, data_B_V) #mV 
-#plt.show()
+t = np.arange(0,len(data[0]))*params['sampling_interval']
+data_A_V = data[0]*vrange[0]/2**(params['bitresolution']-1) 
+data_B_V = data[1]*vrange[1]/2**(params['bitresolution']-1) 
+plt.figure()
+plt.plot(t,data_A_V) #mV
+plt.figure()
+plt.plot(t, data_B_V) #mV 
+plt.show()

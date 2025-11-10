@@ -9,7 +9,8 @@ import threading
 # Slow stage Position and RTD measurement;  
 from mossbauer_control.instruments import keithley
 # LOCK-IN-AMPLIFIER for fast stage; 
-from mossbauer_control.instruments import SRS830
+#from mossbauer_control.instruments import SRS830
+from mossbauer_control.instruments import SRS810
 # Yoctopuce, the code is organized strangely
 # from mossbauer_control.instruments import yoctopuce
 
@@ -90,10 +91,11 @@ class slowcontrol():
 
 		self.voltmeter = keithley(gpib_address = 6)
 		# Slow stage position;
-		self.srs = SRS830(gpib_address = 10)
+		#self.srs = SRS830(gpib_address = 10)
+		self.srs = SRS810(gpib_address = 11)
 		# Fast stage position;
 		
-		self.dc205 = dc205(address="ASRL3::INSTR")
+		self.dc205 = dc205()
 		# RTD voltage supply 
 		self.thermo = keithley(gpib_address = 7)
 		# RTD readout 
@@ -111,15 +113,16 @@ class slowcontrol():
 		self.RTD_switch_interval = 10 
 		
 		#self.RTD_read_interval = 1  
-		self.Slow_current_set = 1e-9 
+		self.Slow_current_set = 10e-9 
 		self.Slow_current=  self.Slow_current_set
 		self.Slow_switch_interval = 500 
 		
 		# Fast Stage parameters;
-		self.fast_amp = 6.579
-		self.fast_freq= 30 
+		self.fast_amp = 7.1
+		self.fast_freq= 30.1 
 		
 		# BNC parameters
+		# BNC shares the frequency with fast stage
 		self.nbursts=5 
 		
 		# Latest values;
@@ -157,6 +160,7 @@ class slowcontrol():
 		stop = threading.Event()
 		def run():
 			nextT = time.monotonic() + self.Slow_switch_interval  
+			self.calibrator.set_current(self.Slow_current)
 			while not stop.is_set():
 				if stop.wait(max(0.0, nextT - time.monotonic())):
 					break
@@ -215,12 +219,13 @@ class slowcontrol():
 		'''
 		deprecated function that is used to readout the absolute temperature and relative temperature;
   		'''
+		#not used?
 		stop = threading.Event()
 		def run():
 			while not stop.is_set():
 				t0 = time.time()
 				try:
-        
+					# change the function if you want to use other ways to measure it;
 					ch1, ch2 = self.thermo.measure_both()   
 					self.latest_diff_T = ch1 
 					self.latest_abs_T = ch2 
@@ -266,9 +271,9 @@ class slowcontrol():
 			while not stop.is_set():
 				t0 = time.time()
 				try:
-					(R, theta, f_ref ) = self.srs.read_all()
+					(R, theta_ref, f_ref ) = self.srs.take_data()
 					self.latest_A  = R 
-					self.latest_phi = theta
+					self.latest_phi = theta_ref
 					self.latest_f = f_ref
 				except Exception as e:
 					print(f"[WARN] srs latest read failed: {e}")
@@ -286,9 +291,9 @@ class slowcontrol():
 		
 		# Fast Stage Control and readout 
 		#set up fast stage Function Generator;
-		self.drive.experiment_setup(self.fast_freq,self.nbursts)
+		self.drive.experiment_setup(self.fast_freq,self.nbursts) #why n bursts
 		# setup SRS fast stage;
-		self.srs.experiment_setup()
+		self.srs.experiment_setup(self.fast_freq) #maybe add time const dep on frequency of readout
 		self.srs_stopper=self.start_srs_latest(0.2)
 		
   		#set up BNC555, trigger box;
@@ -296,7 +301,7 @@ class slowcontrol():
 		
 		# Slow Stage control and readout 
 		# Slow stage current source 
-		self.calibrator.experiment_setup()
+		self.calibrator.experiment_setup() #maybe we define the current?
 		self.calibrator_stopper = self.Slow_Flip()
 		# setup keithley slow stage ; 
 		self.voltmeter.experiment_voltmeter_setup()
@@ -326,8 +331,8 @@ class slowcontrol():
 			# Use the snapshot to get the current value and then record it.  
 			diff_T = getattr(self, 'latest_diff_T', -1)
 			abs_T  = getattr(self, 'latest_abs_T',-1)
-			rtd_v  = getattr(self, 'RTD_voltage', -1) 
-			current= getattr(self, 'Slow_current',0)
+			rtd_V  = getattr(self, 'RTD_voltage', -1) 
+			current= getattr(self, 'Slow_current',-1)
 			data_V = getattr(self, 'latest_data_V', -1)
 			
 			A      = getattr(self, 'latest_A',-1)
@@ -340,8 +345,8 @@ class slowcontrol():
    
 			remain = interval - (time.time() - t0)
 			
-			print(f"[{ts.isoformat()}] V={data_V:.6g}  diff_T={diff_T:.6g}  abs_T={abs_T:.6g} "
-			  f"A={A:.6g} (set {A_set})  phi={phi:.6g}  f={f_ref:.6g} (set {f_set})  I={current:.6g}")
+			print(f"[{ts.isoformat()}] strain_small={data_V:.6g}  diff_T={diff_T:.6g}  abs_T={abs_T:.6g} "
+			  f"A={A:.6g} d_set {A_set}  phi={phi:.6g}  f={f_ref:.6g} (set {f_set})  I={current:.6g}")
 			
 			self.db.insert_snapshot(ts,
 				diff_T, abs_T,
@@ -356,7 +361,7 @@ class slowcontrol():
 
 	def run(self):
 		self.setup()
-		time.sleep(1)
+		time.sleep(5)
 		self.fetch()
 		
 	def stop(self):

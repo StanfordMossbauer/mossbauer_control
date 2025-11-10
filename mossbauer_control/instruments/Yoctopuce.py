@@ -1,5 +1,5 @@
-from os import path, makedirs
-import csv
+# from os import path, makedirs
+# import csv
 from yoctopuce.yocto_api import *
 from yoctopuce.yocto_temperature import *
 from yoctopuce.yocto_humidity import *
@@ -61,67 +61,31 @@ class Yoctopuce():
         self.Hvals=[self.humidity.get_currentValue()]
 
 
-    def update(self):
-        """Updates TPH and time. save to file."""
-        try:
-            currentT= self.temperature.get_currentValue()
-            currentH=self.humidity.get_currentValue()
-            currentP=self.pressure.get_currentValue()
-            currenttime = datetime.now().timestamp()
-            timedisplay= datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        except:
-            YAPI.Sleep(1000)
-            print('update error. try again...')
-            currentT= self.temperature.get_currentValue()
-            currentH=self.humidity.get_currentValue()
-            currentP=self.pressure.get_currentValue()
-            currenttime = datetime.now().timestamp()
-            timedisplay= datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-        self.Tvals.append(currentT)
-        self.Pvals.append(currentP)
-        self.Hvals.append(currentH)
-        self.times.append(currenttime)
+    def measure(self):
+        currentT= self.temperature.get_currentValue()
+        currentH=self.humidity.get_currentValue()
+        currentP=self.pressure.get_currentValue()
 
-        ## Save to file. Append if exists, otherwise create.
-        if path.exists(self.log_file):
-            type = 'a'
-        else:
-            type = 'w'
-            with open(self.log_file, type, newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow(['time', 'temp [C]', 'RH [%]', 'P [mbar]'])
+        return currentT, currentH, currentP
 
-        with open(self.log_file, type, newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([timedisplay, currentT, currentH, currentP])
-           
-        
-def updateall(loggers, closingtime='0100'):
-    ''' update loggers via schedule'''
-    
-    today =datetime.now()   
-    for l in loggers:
-        l.update()
-        
-    if today.strftime('%H%M')==closingtime:
-        #clear the task every day at closing time 
-        schedule.clear()
-        print('cancelling at (mdHM)'+today.strftime('%m%d%H%M'))
-        
-        # cleaning up ...
-        YAPI.UpdateDeviceList()
-        YAPI.HandleEvents()
-        sys.exit()
     
 if __name__ == "__main__":
     
     loggername_mossbauer = 'METEOMK2-2377A2'
+    Y = Yoctopuce(loggername_mossbauer)
 
+    T_list = []
+    H_list = []
+    P_list = []
+    for i in range(3):
+        T, P, H = Y.measure()
+        print(T, P, H)
+        T_list.append(T)
+        P_list.append(P)
+        H_list.append(H)
+        time.sleep(1)
 
-    Y = yoctopucelogger(loggername_mossbauer)
-    T  = Y.temperature.get_currentValue()
-    P  = Y.pressure.get_currentValue()
-    H  = Y.humidity.get_currentValue()
+    print(T_list, H_list, P_list)
+
     
  

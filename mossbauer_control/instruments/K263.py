@@ -40,14 +40,14 @@ if __name__ == "__main__":
     calibrator = K263(gpib_address = 9)
     calibrator.set_current_mode()
     calibrator.set_current_range()
-    calibrator.set_current(5E-9)
+    calibrator.set_current(10E-9)
     calibrator.operate()
 
     i=0
     while True:
-        calibrator.set_current(-1E-10)
+        calibrator.set_current(-1E-9)
         time.sleep(1000)
-        calibrator.set_current(1E-10)
+        calibrator.set_current(1E-9)
         time.sleep(1000)
         i+=1
 
