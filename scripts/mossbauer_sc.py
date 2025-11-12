@@ -115,7 +115,7 @@ class slowcontrol():
 		#self.RTD_read_interval = 1  
 		self.Slow_current_set = 10e-9 
 		self.Slow_current=  self.Slow_current_set
-		self.Slow_switch_interval = 500 
+		self.Slow_switch_interval = 500
 		
 		# Fast Stage parameters;
 		self.fast_amp = 7.1
@@ -167,9 +167,10 @@ class slowcontrol():
 				self.Slow_current = -self.Slow_current
 				self.calibrator.set_current(self.Slow_current)
 				nextT =time.monotonic()+ self.Slow_switch_interval
-				#if self.Slow_current <0:
-				#	self.calibrator.discharge()
-			#		print('discharged')    
+				if self.Slow_current <0:
+					self.calibrator.discharge()
+					print('discharged')  
+					self.calibrator.set_current(self.Slow_current)  
 		threading.Thread(target=run, daemon=True).start()
 		return stop 
 
