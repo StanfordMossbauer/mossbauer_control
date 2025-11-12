@@ -16,6 +16,13 @@ class K263:
     def set_current_mode(self):
         self.instrument.write("F1X")
 
+    def set_mode(self, mode):  # 1 for current, 2 for voltage
+        self.instrument.write(f"F{mode}X")
+
+    def set_voltage(self, voltage=0):
+        self.instrument.write("R0X") #set auto range
+        self.instrument.write(f"V{voltage}X")  #set voltage to 0
+
     def set_current_range(self):
         self.instrument.write("R5X") #FOR 20nA
     
@@ -33,25 +40,42 @@ class K263:
         self.set_current_range()
         self.set_current(1E-10)
         self.operate()
+    
+    def discharge(self):
+        self.set_mode(2)
+        self.set_voltage(0)
+        self.operate()
+        time.sleep(1)
+        self.set_current_mode()
+        self.set_current_range()
+        self.set_current(1E-10)
+        self.operate()
+
 
 
 if __name__ == "__main__":
     
+    # calibrator = K263(gpib_address = 9)
+    # calibrator.set_current_mode()
+    # calibrator.set_current_range()
+    # calibrator.set_current(10E-9)
+    # calibrator.operate()
+
+    # i=0
+    # while True:
+    #     calibrator.set_current(-1E-9)
+    #     time.sleep(1000)
+    #     calibrator.set_current(1E-9)
+    #     time.sleep(1000)
+    #     i+=1
+
+    # calibrator.stop()
+
     calibrator = K263(gpib_address = 9)
-    calibrator.set_current_mode()
-    calibrator.set_current_range()
-    calibrator.set_current(10E-9)
-    calibrator.operate()
-
-    i=0
-    while True:
-        calibrator.set_current(-1E-9)
-        time.sleep(1000)
-        calibrator.set_current(1E-9)
-        time.sleep(1000)
-        i+=1
-
-    calibrator.stop()
+    calibrator.experiment_setup()
+    time.sleep(1)
+    calibrator.discharge()
+    time.sleep(1)
 
 
 

@@ -166,7 +166,10 @@ class slowcontrol():
 					break
 				self.Slow_current = -self.Slow_current
 				self.calibrator.set_current(self.Slow_current)
-				nextT =time.monotonic()+ self.Slow_switch_interval    
+				nextT =time.monotonic()+ self.Slow_switch_interval
+				#if self.Slow_current <0:
+				#	self.calibrator.discharge()
+			#		print('discharged')    
 		threading.Thread(target=run, daemon=True).start()
 		return stop 
 
