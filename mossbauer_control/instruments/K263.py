@@ -71,11 +71,24 @@ if __name__ == "__main__":
 
     # calibrator.stop()
 
+    # calibrator = K263(gpib_address = 9)
+    # calibrator.experiment_setup()
+    # time.sleep(1)
+    # calibrator.discharge()
+    # time.sleep(1)
+
     calibrator = K263(gpib_address = 9)
     calibrator.experiment_setup()
-    time.sleep(1)
-    calibrator.discharge()
-    time.sleep(1)
+
+    while True:
+        calibrator.set_current(-10E-9)
+        time.sleep(100)
+        calibrator.set_current(10E-9)
+        time.sleep(100)
+        calibrator.discharge()
+        time.sleep(1)
+
+    
 
 
 

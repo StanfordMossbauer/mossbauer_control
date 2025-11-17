@@ -221,7 +221,7 @@ if __name__=='__main__':
     start = time.time()
 
     i = 1
-    while i<200:
+    while i<600:
         i+=1
         time.sleep(1)
         data = voltmeter.get_data()
@@ -235,7 +235,7 @@ if __name__=='__main__':
 
 
     # Define the full file path
-    save_path = r'C:\Users\mossbauer\Documents\data\1107\test_strain_small_7V_2.csv'
+    save_path = r'C:\Users\mossbauer\Documents\data\1117\test_strain_small_2.csv'
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     df.to_csv(save_path, index=False)
 

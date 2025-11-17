@@ -20,7 +20,7 @@ def get_file_path(base_dir):
     return os.path.join(base_dir, filename)
 
 # Folder to save CSVs
-base_dir = r'C:\Users\mossbauer\Documents\data\1008'
+base_dir = r'C:\Users\mossbauer\Documents\data\1117'
 os.makedirs(base_dir, exist_ok=True)
 
 # Track current file date
@@ -53,27 +53,47 @@ while True:
         file_path = get_file_path(base_dir)
         with open(file_path, mode='w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['time', 'diff_T', 'abs_T'])
+            writer.writerow(['time', 'diff_T', 'abs_T', 'voltage'])
 
     current_time = time.time()
 
-    if current_time - last_switch_time >= switch_interval:
-        voltage = -voltage 
-        dc205.set_voltage(voltage)
-        last_switch_time = current_time
+    # if current_time - last_switch_time >= switch_interval:
+    #     voltage = -voltage 
+    #     dc205.set_voltage(voltage)
+    #     last_switch_time = current_time
 
-    ch1, ch2 = thermo.measure_both()
+    # Generate voltage list from 0–2 V in 0.1 V steps
+    voltages = np.arange(0, 2.1, 0.1)   # includes 2.0 V
+
+    for voltage in voltages:
+        dc205.set_voltage(voltage)
+        time.sleep(5)                   # settling time after voltage change
+
+        for _ in range(60):             # 60 seconds of measurement
+            ch1, ch2 = thermo.measure_both()
+            diff_T = ch1
+            abs_T = ch2
+            timestamp = time.time()
+
+            with open(file_path, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([timestamp, diff_T, abs_T, voltage])
+
+
+
+
+    # ch1, ch2 = thermo.measure_both()
     
-    diff_T = ch1
-    abs_T = ch2
+    # diff_T = ch1
+    # abs_T = ch2
 
     #print(diff_T, abs_T)
 
     
 
-    timestamp = time.time()
-    with open(file_path, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow([timestamp, diff_T, abs_T])
+    # timestamp = time.time()
+    # with open(file_path, mode='a', newline='') as file:
+    #     writer = csv.writer(file)
+    #     writer.writerow([timestamp, diff_T, abs_T])
 
 

@@ -71,6 +71,9 @@ class SRS810:
         res = self.instrument.query("SNAP? 1,2,3")
         X, Y, R = np.array(res.strip().split(",")).astype(float)
         return X, Y, R
+
+    def read_R(self):
+        R = self.instrument.query("SNAP? 3")
     
     def read_f_ref(self):
         fref = self.instrument.query("FREQ?")
@@ -137,10 +140,11 @@ class SRS810:
     #         return value  # fallback if it's not numeric
 
     def take_data(self):
+        #R = self.read_R()
         X, Y, R = self.read_all()
         fref = float(self.read_f_ref().strip())
         phase = float(self.read_phase().strip())
-        return R,  phase, fref
+        return float(R),  phase, fref
 
 if __name__ == "__main__":
     # # Run for 40 Hz drive

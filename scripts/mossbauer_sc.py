@@ -275,7 +275,7 @@ class slowcontrol():
 			while not stop.is_set():
 				t0 = time.time()
 				try:
-					(R, theta_ref, f_ref ) = self.srs.take_data()
+					(R, theta_ref, f_ref)  = self.srs.take_data()
 					self.latest_A  = R 
 					self.latest_phi = theta_ref
 					self.latest_f = f_ref
