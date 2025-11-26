@@ -16,7 +16,7 @@ from mossbauer_control.instruments import dc205
 def get_file_path(base_dir):
     """Generate file path with current date"""
     date_str = datetime.now().strftime("%Y-%m-%d")
-    filename = f"RTD_{date_str}.csv"
+    filename = f"RTD_2_{date_str}.csv"
     return os.path.join(base_dir, filename)
 
 # Folder to save CSVs

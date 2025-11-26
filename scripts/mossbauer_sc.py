@@ -10,7 +10,8 @@ import threading
 from mossbauer_control.instruments import keithley
 # LOCK-IN-AMPLIFIER for fast stage; 
 #from mossbauer_control.instruments import SRS830
-from mossbauer_control.instruments import SRS810
+#from mossbauer_control.instruments import SRS810
+from mossbauer_control.instruments import SRS860
 # Yoctopuce, the code is organized strangely
 # from mossbauer_control.instruments import yoctopuce
 
@@ -92,7 +93,7 @@ class slowcontrol():
 		self.voltmeter = keithley(gpib_address = 6)
 		# Slow stage position;
 		#self.srs = SRS830(gpib_address = 10)
-		self.srs = SRS810(gpib_address = 11)
+		self.srs = SRS860(gpib_address = 10)
 		# Fast stage position;
 		
 		self.dc205 = dc205()
@@ -118,12 +119,12 @@ class slowcontrol():
 		self.Slow_switch_interval = 500
 		
 		# Fast Stage parameters;
-		self.fast_amp = 7.1
-		self.fast_freq= 30.1 
+		self.fast_amp = 20
+		self.fast_freq= 40 
 		
 		# BNC parameters
 		# BNC shares the frequency with fast stage
-		self.nbursts=5 
+		self.nbursts=5
 		
 		# Latest values;
 		# Keithley Temperature Sensors;
@@ -275,7 +276,7 @@ class slowcontrol():
 			while not stop.is_set():
 				t0 = time.time()
 				try:
-					(R, theta_ref, f_ref)  = self.srs.take_data()
+					(R, theta_ref, f_ref)  = self.srs.read_all()
 					self.latest_A  = R 
 					self.latest_phi = theta_ref
 					self.latest_f = f_ref
@@ -295,9 +296,9 @@ class slowcontrol():
 		
 		# Fast Stage Control and readout 
 		#set up fast stage Function Generator;
-		self.drive.experiment_setup(self.fast_freq,self.nbursts) #why n bursts
+		self.drive.experiment_setup(self.fast_freq) #why n bursts
 		# setup SRS fast stage;
-		self.srs.experiment_setup(self.fast_freq) #maybe add time const dep on frequency of readout
+		self.srs.experiment_setup() #maybe add time const dep on frequency of readout
 		self.srs_stopper=self.start_srs_latest(0.2)
 		
   		#set up BNC555, trigger box;
