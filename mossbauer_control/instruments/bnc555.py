@@ -65,7 +65,10 @@ class bnc555:
     def channel_mode(self, channel, mode='BURST'):
         self.instrument.write(f":PULSE{channel}:CMOD {mode}")
 
-    def experiment_setup(self, f=30, nbursts=5):
+    def set_amplitude(self, amplitude):
+        self.instrument.write(f":AMPL {amplitude}")
+
+    def experiment_setup(self, f=40, nbursts=5):
         #note there is an extra division by 10 because this is the weird unit of set_clock_f
         pulse_period =  int((1/(f*nbursts*2*10)-1e-7)*1e6)/1e6
         self.setup()   
@@ -89,30 +92,31 @@ class bnc555:
 
 if __name__=='__main__':
     bnc = bnc555(gpib_address = 1)
+    bnc.experiment_setup()
 
-    bnc.setup()
-    bnc.reset()
+    # bnc.setup()
+    # bnc.reset()
 
-    #configure sys clock for 300Hz from 60Hz trigger
-    bnc.set_clock_mode('BURST')
-    bnc.set_ext_trigger()
-    bnc.enable(0, 'ON')
-    bnc.set_clock_f(0.00032)
-    bnc.burst_count(0, 5)
+    # #configure sys clock for 300Hz from 60Hz trigger
+    # bnc.set_clock_mode('BURST')
+    # bnc.set_ext_trigger()
+    # bnc.enable(0, 'ON')
+    # bnc.set_clock_f(0.00032)
+    # bnc.burst_count(0, 5)
 
-    #set channel 1 for camera trigger
-    bnc.enable(1, 'ON')
-    bnc.channel_mode(1, 'BURST')
-    bnc.burst_count(1, 5)
-    bnc.pulse_width(1, 0.0001)
-    bnc.pulse_delay(1, 0)
+    # #set channel 1 for camera trigger
+    # bnc.enable(1, 'ON')
+    # bnc.channel_mode(1, 'BURST')
+    # bnc.burst_count(1, 5)
+    # bnc.pulse_width(1, 0.0001)
+    # bnc.pulse_delay(1, 0)
 
-    #set channel 2 for camera DAQ
-    bnc.enable(2, 'ON')
-    bnc.channel_mode(2, 'BURST')
-    bnc.burst_count(2, 4)
-    bnc.pulse_width(2, 0.0001)
-    bnc.pulse_delay(2, 0.031)
+    # #set channel 2 for camera DAQ
+    # bnc.enable(2, 'ON')
+    # bnc.channel_mode(2, 'BURST')
+    # bnc.burst_count(2, 4)
+    # bnc.pulse_width(2, 0.0001)
+    # bnc.pulse_delay(2, 0.031)
 
 
 

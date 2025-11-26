@@ -20,5 +20,6 @@ from .bnc555 import bnc555
 from .SRSDC205 import dc205
 from .Yoctopuce import Yoctopuce
 #from .SRS830 import SRS830
-from .SRS810 import SRS810
+#from .SRS810 import SRS810
+from .SRS860 import SRS860
 
