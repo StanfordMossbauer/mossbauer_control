@@ -6,5 +6,6 @@ dpp-readout/bin/
 *.log
 *.hdf5
 *.swp
+*.txt
 
 mossbauer_control.egg-info/
