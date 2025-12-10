@@ -114,7 +114,7 @@ class slowcontrol():
 		self.RTD_switch_interval = 10 
 		
 		#self.RTD_read_interval = 1  
-		self.Slow_current_set = 10e-9 
+		self.Slow_current_set = 0e-9 
 		self.Slow_current=  self.Slow_current_set
 		self.Slow_switch_interval = 500
 		

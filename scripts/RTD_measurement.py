@@ -57,43 +57,43 @@ while True:
 
     current_time = time.time()
 
-    # if current_time - last_switch_time >= switch_interval:
-    #     voltage = -voltage 
-    #     dc205.set_voltage(voltage)
-    #     last_switch_time = current_time
+    if current_time - last_switch_time >= switch_interval:
+        voltage = -voltage 
+        dc205.set_voltage(voltage)
+        last_switch_time = current_time
 
     # Generate voltage list from 0–2 V in 0.1 V steps
-    voltages = np.arange(0, 2.1, 0.1)   # includes 2.0 V
+    # voltages = np.arange(0, 2.1, 0.1)   # includes 2.0 V
 
-    for voltage in voltages:
-        dc205.set_voltage(voltage)
-        time.sleep(5)                   # settling time after voltage change
+    # for voltage in voltages:
+    #     dc205.set_voltage(voltage)
+    #     time.sleep(5)                   # settling time after voltage change
 
-        for _ in range(60):             # 60 seconds of measurement
-            ch1, ch2 = thermo.measure_both()
-            diff_T = ch1
-            abs_T = ch2
-            timestamp = time.time()
+    #     for _ in range(60):             # 60 seconds of measurement
+    #         ch1, ch2 = thermo.measure_both()
+    #         diff_T = ch1
+    #         abs_T = ch2
+    #         timestamp = time.time()
 
-            with open(file_path, mode='a', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow([timestamp, diff_T, abs_T, voltage])
-
-
+    #         with open(file_path, mode='a', newline='') as file:
+    #             writer = csv.writer(file)
+    #             writer.writerow([timestamp, diff_T, abs_T, voltage])
 
 
-    # ch1, ch2 = thermo.measure_both()
+
+
+    ch1, ch2 = thermo.measure_both()
     
-    # diff_T = ch1
-    # abs_T = ch2
+    diff_T = ch1
+    abs_T = ch2
 
-    #print(diff_T, abs_T)
+    print(diff_T, abs_T)
 
     
 
-    # timestamp = time.time()
-    # with open(file_path, mode='a', newline='') as file:
-    #     writer = csv.writer(file)
-    #     writer.writerow([timestamp, diff_T, abs_T])
+    timestamp = time.time()
+    with open(file_path, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([timestamp, diff_T, abs_T, voltage])
 
 
