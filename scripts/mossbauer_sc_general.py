@@ -131,7 +131,7 @@ class slowcontrol():
 		self.Slow_switch_interval = 500
 		
 		# Fast Stage parameters;
-		self.fast_amp = 20
+		self.fast_Vpp = 20
 		self.fast_freq= 40 
 		
 		# BNC parameters
@@ -194,13 +194,13 @@ class slowcontrol():
 	def set_to_v(self, v):
 		k = 20e-6/170 # meter per volts
 		f = self.fast_freq
-		A = v / (2 * np.pi * f * k)
+		V_pp = v / ( np.pi * f * k)
 		offset = 10 # Keep the offset constant ; 
 	
-		self.fast_amp =A
+		self.fast_Vpp =V_pp
 		self.drive.set_sine()
 		self.drive.set_frequency(f)
-		self.drive.set_amplitude(A)
+		self.drive.set_Vpp(V_pp)
 		self.drive.set_offset(offset)
 		self.drive.output_on()
 
@@ -215,7 +215,7 @@ class slowcontrol():
 		def run():
 			n = len(self.scan_velocity_list) # How many velocity we have 
 			nextT = time.monotonic() + self.scan_velocity_integration_time  
-			self.drive.set_amplitude(self.fast_amp)
+			self.drive.set_amplitude(self.fast_Vpp)
 			i=0 
 			while not stop.is_set():
 				
@@ -371,7 +371,7 @@ class slowcontrol():
 		
 		# Fast Stage Control and readout 
 		#set up fast stage Function Generator;
-		self.drive.experiment_setup(f=self.fast_freq,A=self.fast_amp) #why n bursts
+		self.drive.experiment_setup(f=self.fast_freq,A=self.fast_Vpp) #why n bursts
 		if self.scan : 
 			self.drive_stopper=self.Velocity_scan()
 		
@@ -421,7 +421,7 @@ class slowcontrol():
 			data_V = getattr(self, 'latest_data_V', -1)
 			
 			A      = getattr(self, 'latest_A',-1)
-			A_set  = getattr(self, 'fast_amp',-1)
+			A_set  = getattr(self, 'fast_Vpp',-1)
 			phi    = getattr(self, 'latest_phi',-1)
 			f_ref  = getattr(self, 'latest_f',-1)
 			f_set  = getattr(self, 'fast_freq', -1 )
@@ -465,7 +465,7 @@ class slowcontrol():
 		#self.thermo_stopper.set()
 		self.srs_stopper.set()
 		self.rtd_thermo_stopper.set()
-		self.y_stopper.set()
+		self.Y_stopper.set()
 		
 		# This function will stop the system;  
 		if self.scan : 
