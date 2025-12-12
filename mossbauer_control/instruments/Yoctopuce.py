@@ -62,9 +62,9 @@ class Yoctopuce():
 
 
     def measure(self):
-        currentT= self.temperature.get_currentValue()
-        currentH=self.humidity.get_currentValue()
-        currentP=self.pressure.get_currentValue()
+        currentT= float(self.temperature.get_currentValue())
+        currentH= float(self.humidity.get_currentValue())
+        currentP= float(self.pressure.get_currentValue())
 
         return currentT, currentH, currentP
 

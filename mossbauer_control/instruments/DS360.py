@@ -26,7 +26,7 @@ class DS360:
     def set_frequency(self, f):
         self.instrument.write(f"FREQ {f}")
     
-    def set_amplitude(self, A): #set amp in V
+    def set_Vpp(self, A): #set amp in V
         self.instrument.write(f"AMPL {A} VP")
 
     def set_offset(self, D):
