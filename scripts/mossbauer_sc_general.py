@@ -116,8 +116,8 @@ class slowcontrol():
 		
 		# Velocity Scan? 
 		self.scan = scan_symbol
-		self.scan_velocity_integration_time=60
-		self.scan_velocity_list = np.linspace(0.001e-3,0.6e-3,25)
+		self.scan_velocity_integration_time=600
+		self.scan_velocity_list = np.linspace(0.001e-3,0.55e-3,50)
 		
 		
 		# Parameters setup, it is also possible to read it from the config file; 
@@ -195,7 +195,7 @@ class slowcontrol():
 		k = 20e-6/170 # meter per volts
 		f = self.fast_freq
 		V_pp = v / ( np.pi * f * k)
-		offset = 10 # Keep the offset constant ; 
+		offset = 0 # Keep the offset constant ; 
 	
 		self.fast_Vpp =V_pp
 		self.drive.set_sine()
@@ -215,7 +215,7 @@ class slowcontrol():
 		def run():
 			n = len(self.scan_velocity_list) # How many velocity we have 
 			nextT = time.monotonic() + self.scan_velocity_integration_time  
-			self.drive.set_amplitude(self.fast_Vpp)
+			self.drive.set_Vpp(self.fast_Vpp)
 			i=0 
 			while not stop.is_set():
 				
@@ -492,6 +492,8 @@ if __name__ == "__main__" :
 	args = parser.parse_args()	
 		
 	sc = slowcontrol(args.scan)
+	#sc.scan_velocity_list = 
+	#sc.scan_mode = frequency/voltage
 	try:
 		sc.run()   
 	except KeyboardInterrupt:
