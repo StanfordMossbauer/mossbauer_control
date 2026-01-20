@@ -21,13 +21,13 @@ TIME_CONSTANTS = {0: 1e-6, 1:3e-6,
 }
 
 # Sensitivities are in volts
-SENSITIVITIES = {0: 1e-9,
-    1: 2e-9, 2: 5e-9, 3: 10e-9, 4: 20e-9, 5: 50e-9, 6: 100e-9, 7: 200e-9,
-    8: 500e-9, 9: 1e-6, 10: 2e-6, 11: 5e-6, 12: 10e-6, 13: 20e-6, 14: 50e-6,
-    15: 100e-6, 16: 200e-6, 17: 500e-6, 18: 1e-3, 19: 2e-3, 20: 5e-3,
-    21: 10e-3, 22: 20e-3, 23: 50e-3, 24: 100e-3, 25: 200e-3, 26: 500e-3,
-    27: 1
+SENSITIVITIES= {0: 1, 1: 500e-3, 2: 200e-3, 3: 100e-3, 4: 50e-3, 5: 20e-3,
+    6: 10e-3, 7: 5e-3, 8: 2e-3, 9: 1e-3, 10: 500e-6, 11: 200e-6, 
+    12: 100e-6, 13: 50e-6, 14: 20e-6, 15: 10e-6, 16: 5e-6, 17: 2e-6, 
+    18: 1e-6, 19: 500e-9, 20: 200e-9, 21: 100e-9, 22: 50e-9, 23: 20e-9, 
+    24: 10e-9, 25: 5e-9, 26: 2e-9, 27: 1e-9
 }
+
 
 
 class SRS860:
@@ -39,19 +39,24 @@ class SRS860:
         #self.instrument.write("SEND 0") #shot mode (1 for loop mode) for older instruments only
 
 
-    def set_sensitivity(self, sensitivity):
-        self.instrument.write(f"SCAL {sensitivity}")
+    def set_sensitivity(self, value):
+        MAP = SENSITIVITIES
+        closest_value = min(MAP.values(), key=lambda x: abs(x - value))
+        actual_value = list(MAP.keys())[list(MAP.values()).index(closest_value)]
+        self.instrument.write(f"SCAL {actual_value}")
+        return MAP[actual_value]
+        
     
     def get_sensitivity(self):
         return float(self.instrument.query(f"SENS ?"))
     
     
-    def set_time_constant(self, time_constant):
-        # closest_time_constant = min(TIME_CONSTANTS.values(), key=lambda x: abs(x - time_constant))
-        # time_constant = list(TIME_CONSTANTS.keys())[list(TIME_CONSTANTS.values()).index(closest_time_constant)]
-        # self.instrument.write(f"OFLT {time_constant}")
-        # return TIME_CONSTANTS[time_constant]
-        self.instrument.write(f"OFLT {time_constant}")
+    def set_time_constant(self, value):
+        MAP = TIME_CONSTANTS
+        closest_value = min(MAP.values(), key=lambda x: abs(x - value))
+        actual_value = list(MAP.keys())[list(MAP.values()).index(closest_value)]
+        self.instrument.write(f"OFLT {actual_value}")
+        return MAP[actual_value]
     
     def get_time_constant(self):
         return float(self.instrument.query(f"OFLT ?"))
@@ -134,8 +139,8 @@ class SRS860:
     
     def experiment_setup(self):
         self.reset()
-        self.set_sensitivity(12) #added
-        self.set_time_constant(11)
+        self.set_sensitivity(1e-3) #added
+        self.set_time_constant(10e-3)
         
         self.ext_reference()
         self.TTL_trigger_setup()
