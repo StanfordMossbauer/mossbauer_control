@@ -41,8 +41,8 @@ class DS360:
     def experiment_setup(self,f=30,A=6.579):
         self.set_sine()
         self.set_frequency(f)
-        self.set_amplitude(A)
-        self.set_offset(A/2)
+        self.set_Vpp(A)
+        self.set_offset(0)
         self.output_on()
 
 if __name__=='__main__':
