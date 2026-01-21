@@ -116,7 +116,7 @@ class slowcontrol():
 		
 		# Velocity Scan? 
 		self.scan = scan_symbol
-		self.scan_velocity_integration_time=600
+		self.scan_velocity_integration_time=300
 		self.scan_velocity_list = np.linspace(0.001e-3,0.55e-3,50)
 		
 		
