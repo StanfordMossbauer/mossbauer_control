@@ -68,7 +68,7 @@ class bnc555:
     def set_amplitude(self, amplitude):
         self.instrument.write(f":AMPL {amplitude}")
 
-    def experiment_setup(self, f=40, nbursts=5):
+    def experiment_setup(self, f=40, nbursts=5,delay=0):
         #note there is an extra division by 10 because this is the weird unit of set_clock_f
         pulse_period =  int((1/(f*nbursts*2*10)-1e-7)*1e6)/1e6
         self.setup()   
@@ -86,7 +86,7 @@ class bnc555:
         self.channel_mode(1, 'BURST')
         self.burst_count(1, nbursts)
         self.pulse_width(1, 0.0001)
-        self.pulse_delay(1, 0)
+        self.pulse_delay(1, delay)
 
 
 
