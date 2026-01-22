@@ -135,6 +135,7 @@ class slowcontrol():
 		# BNC parameters
 		# BNC shares the frequency with fast stage
 		self.nbursts=5
+		self.bncdelay= max(0,round( 1/(4*self.fast_freq)- (1e-3)/2 , 4) )
 		
 		# Latest values;
 		# Keithley Temperature Sensors;
@@ -385,7 +386,7 @@ class slowcontrol():
 		self.srs_stopper=self.start_srs_latest(0.2)
 		
 		  #set up BNC555, trigger box;
-		self.bnc.experiment_setup(self.fast_freq, self.nbursts)
+		self.bnc.experiment_setup(f=self.fast_freq, nbursts=self.nbursts,delay=self.bncdelay)
 		
 		# Slow Stage control and readout 
 		# Slow stage current source 
@@ -462,7 +463,7 @@ class slowcontrol():
 			n = len(self.vf_velocity_list)
 			i=0 
 			while True: 
-				self.vf_parameters(self.vf_velocity_listp[i])
+				self.vf_parameters(self.vf_velocity_list[i])
 				self.setup()
 				time.sleep(5)
 				self.fetch(max_seconds=self.vf_velocity_integration_time)
