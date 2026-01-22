@@ -84,19 +84,13 @@ class sql_writer:
 			print(f"[WARN] MySQL insert_snapshot failed: {e}")
 
 
-
-
-class csv_writer():   
-	# the csv writer will write data into the csv files; 
-	1==1
-
-
 class slowcontrol():    
-	def __init__(self,scan_symbol):
+	def __init__(self,scan_symbol,vf_symbol):
 		self.drive = DS360(gpib_address = 8)
 		# Fast Stage function generator;
 		self.calibrator = K263(gpib_address = 9)
 		# Slow Stage function generator;
+		self.k  = 20e-6/170 # meter per volts, the piezo; 
 
 		self.voltmeter = keithley(gpib_address = 6)
 		# Slow stage position;
@@ -118,6 +112,10 @@ class slowcontrol():
 		self.scan = scan_symbol
 		self.scan_velocity_integration_time=300
 		self.scan_velocity_list = np.linspace(0.001e-3,0.55e-3,50)
+		# Variable Frequency Scan? 
+		self.vf = vf_symbol 
+		self.vf_velocity_integration_time=300
+		self.vf_velocity_list = np.linspace(0.001e-3,2.00e-3,100)
 		
 		
 		# Parameters setup, it is also possible to read it from the config file; 
@@ -149,8 +147,15 @@ class slowcontrol():
 		self.latest_phi = 0 
 		self.latest_f = 0
 
+	def vf_parameters(self,v): 
+    
+		# The frequency will always put the amplitude at A=38;
+		self.fast_Vpp=38 
+		self.fast_freq= v / ( np.pi * self.fast_Vpp * self.k)
 		
-
+		# The BNC will just take a 1ms frame at the center; 
+		self.nbursts=1 
+		self.bncdelay= max(0,round( 1/(4*self.fast_freq)- (1e-3)/2 , 4) ) 
 	
 	def RTD_Flip(self):
 		'''
@@ -192,9 +197,9 @@ class slowcontrol():
 
 
 	def set_to_v(self, v):
-		k = 20e-6/170 # meter per volts
+		#k = 20e-6/170 # meter per volts
 		f = self.fast_freq
-		V_pp = v / ( np.pi * f * k)
+		V_pp = v / ( np.pi * f * self.k)
 		offset = 0 # Keep the offset constant ; 
 	
 		self.fast_Vpp =V_pp
@@ -406,9 +411,9 @@ class slowcontrol():
 		self.Y_stopper= self.yocto_latest(poll_interval=0.6)
 		
 	
-	def fetch(self,interval=1):
-		# This script is used to fetch the data from the instruments; 
-
+	def fetch(self,interval=1,max_seconds=None):
+    	# This script is used to fetch the data from the instruments; 
+		deadline = None if max_seconds is None else (time.time() + max_seconds)
 		while True:
 			t0 = time.time()
 			ts= datetime.now(timezone.utc)
@@ -425,18 +430,18 @@ class slowcontrol():
 			phi    = getattr(self, 'latest_phi',-1)
 			f_ref  = getattr(self, 'latest_f',-1)
 			f_set  = getattr(self, 'fast_freq', -1 )
-
+		
 			# The temperature sensor is also needed; 
 			H		= getattr(self, 'latest_H', -1)
 			P		= getattr(self, 'latest_P', -1)
 			T		= getattr(self, 'latest_T', -1)
-
-   
-   
+		
+		
+		
 			remain = interval - (time.time() - t0)
 			
 			print(f"[{ts.isoformat()}] strain_small={data_V:.6g}  diff_T={diff_T:.6g}  abs_T={abs_T:.6g} "
-			  f"A={A:.6g} A_set {A_set}  phi={phi:.6g}  f={f_ref:.6g} (set {f_set})  I={current:.6g} H={H:.6g} P={P:.6g} T={T:.6g}")
+			f"A={A:.6g} A_set {A_set}  phi={phi:.6g}  f={f_ref:.6g} (set {f_set})  I={current:.6g} H={H:.6g} P={P:.6g} T={T:.6g}")
 			
 			self.db.insert_snapshot(ts,
 				diff_T, abs_T,
@@ -448,11 +453,26 @@ class slowcontrol():
 			
 			if remain > 0:
 				time.sleep(remain)
+		
+			if deadline is not None and time.time() >= deadline:
+				return
 
 	def run(self):
-		self.setup()
-		time.sleep(5)
-		self.fetch()
+		if self.vf: 
+			n = len(self.vf_velocity_list)
+			i=0 
+			while True: 
+				self.vf_parameters(self.vf_velocity_listp[i])
+				self.setup()
+				time.sleep(5)
+				self.fetch(max_seconds=self.vf_velocity_integration_time)
+				self.stop()
+				time.sleep(5)
+				i=(i+1)%n
+		else:      
+			self.setup()
+			time.sleep(5)
+			self.fetch()
 		
 	def stop(self):
 		self.drive.output_off()
@@ -467,9 +487,10 @@ class slowcontrol():
 		self.rtd_thermo_stopper.set()
 		self.Y_stopper.set()
 		
-		# This function will stop the system;  
-		if self.scan : 
-			self.Velocity_scan   
+		# Stop the drive; 
+		if self.scan: 
+			self.drive_stopper.set() 	
+ 
 	
 	# Let us integrate the RTD script first; 
 	
@@ -487,11 +508,19 @@ if __name__ == "__main__" :
 		required = False,
 		default  = False,
 		help     = "Whether this is a scan;",
-	)  
+	) 
+
+	parser.add_argument( 
+        "--vf", 
+        type     = argBool,
+		required = False,
+		default  = False,
+        help = "Whether this is a variable frequency scan"            
+    )
 		
 	args = parser.parse_args()	
 		
-	sc = slowcontrol(args.scan)
+	sc = slowcontrol(args.scan,args.vf)
 	#sc.scan_velocity_list = 
 	#sc.scan_mode = frequency/voltage
 	try:
