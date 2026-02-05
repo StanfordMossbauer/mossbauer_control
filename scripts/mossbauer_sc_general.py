@@ -91,6 +91,8 @@ class slowcontrol():
 		self.calibrator = K263(gpib_address = 9)
 		# Slow Stage function generator;
 		self.k  = 20e-6/170 # meter per volts, the piezo; 
+		self.exposure_time = 0.3e-3
+		self.delay = 0
 
 		self.voltmeter = keithley(gpib_address = 6)
 		# Slow stage position;
@@ -110,8 +112,11 @@ class slowcontrol():
 		
 		# Velocity Scan? 
 		self.scan = scan_symbol
-		self.scan_velocity_integration_time=300
-		self.scan_velocity_list = np.linspace(0.001e-3,0.55e-3,50)
+		self.scan_velocity_integration_time=600
+		#self.scan_velocity_list = np.linspace(0.001e-3,0.6e-3,15)
+	
+		self.scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
+		
 		# Variable Frequency Scan? 
 		self.vf = vf_symbol 
 		self.vf_velocity_integration_time=300
@@ -130,13 +135,14 @@ class slowcontrol():
 		
 		# Fast Stage parameters;
 		self.fast_Vpp = 20
-		self.fast_freq= 40 
+		self.fast_freq= 40
 		
 		# BNC parameters
 		# BNC shares the frequency with fast stage
-		self.nbursts=5
-		self.bncdelay= max(0,round( 1/(4*self.fast_freq)- (1e-3)/2 , 4) )
-		
+		self.nbursts=1
+		self.bncdelay= max(0,10*round( 1/(4*self.fast_freq)- (self.exposure_time)/2 , 5) )
+		#self.bncdelay=0
+
 		# Latest values;
 		# Keithley Temperature Sensors;
 		self.latest_diff_T=0
@@ -148,15 +154,15 @@ class slowcontrol():
 		self.latest_phi = 0 
 		self.latest_f = 0
 
+	#NOT USED
 	def vf_parameters(self,v): 
-    
 		# The frequency will always put the amplitude at A=38;
 		self.fast_Vpp=38 
 		self.fast_freq= v / ( np.pi * self.fast_Vpp * self.k)
 		
 		# The BNC will just take a 1ms frame at the center; 
 		self.nbursts=1 
-		self.bncdelay= max(0,round( 1/(4*self.fast_freq)- (1e-3)/2 , 4) ) 
+		self.bncdelay= max(0,round( 1/(4*self.fast_freq)- (self.exposure_time)/2 , 5) ) 
 	
 	def RTD_Flip(self):
 		'''
@@ -219,15 +225,18 @@ class slowcontrol():
 		# the stop (thread.event) could be used to stop this thread
 		stop = threading.Event()
 		def run():
-			n = len(self.scan_velocity_list) # How many velocity we have 
+			n = len(self.scan_vpp_list) # How many velocity we have 
 			nextT = time.monotonic() + self.scan_velocity_integration_time  
+			self.fast_Vpp = self.scan_vpp_list[0]
 			self.drive.set_Vpp(self.fast_Vpp)
 			i=0 
 			while not stop.is_set():
 				
 				if stop.wait(max(0.0, nextT - time.monotonic())):
 					break
-				self.set_to_v(self.scan_velocity_list[i])
+				#self.set_to_v(self.scan_velocity_list[i])
+				self.fast_Vpp = self.scan_vpp_list[i]
+				self.drive.set_Vpp(self.fast_Vpp)
 				
 				i= (i+1)%n 
 				nextT =time.monotonic()+ self.scan_velocity_integration_time
@@ -386,7 +395,7 @@ class slowcontrol():
 		self.srs_stopper=self.start_srs_latest(0.2)
 		
 		  #set up BNC555, trigger box;
-		self.bnc.experiment_setup(f=self.fast_freq, nbursts=self.nbursts,delay=self.bncdelay)
+		self.bnc.experiment_setup(width_s = self.exposure_time, delay_s = self.delay)
 		
 		# Slow Stage control and readout 
 		# Slow stage current source 
@@ -520,10 +529,22 @@ if __name__ == "__main__" :
     )
 		
 	args = parser.parse_args()	
-		
+
+
+	#HERE SET PARMAETERS	
 	sc = slowcontrol(args.scan,args.vf)
 	#sc.scan_velocity_list = 
 	#sc.scan_mode = frequency/voltage
+	sc.fast_freq = 200
+	sc.exposure_time = 1e-3
+	sc.delay = 0 #be very careful. BNC only accepts some values! If not will set delay to 0!
+
+	sc.scan_velocity_list = np.linspace(0.001e-3,0.6e-3,15)
+	sc.scan_velocity_integration_time=300
+
+
+
+
 	try:
 		sc.run()   
 	except KeyboardInterrupt:
