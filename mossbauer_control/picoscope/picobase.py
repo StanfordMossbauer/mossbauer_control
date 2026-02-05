@@ -57,7 +57,7 @@ which was adapted from
 http://www.picotech.com/support/topic4926.html
 """
 
-from ..base import *
+#from ..base import *
 
 class _PicoscopeBase(MossbauerInstrument):
     """

@@ -1,4 +1,4 @@
-from mossbauer_control.instruments import PS2000
+from mossbauer_control import PS2000
 import matplotlib.pyplot as plt
 import numpy as np
 
