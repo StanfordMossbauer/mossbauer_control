@@ -44,27 +44,26 @@ class SDG1062X:
 
     def burst_enable(self, channel, mode):
         #possibilities: ON, OFF
-        self.instrument.write(f"C{channel}:BTWV STATE {mode}")
+        self.instrument.write(f"C{channel}:BTWV STATE, {mode}")
 
     def set_burst_mode(self, channel, mode):
         #possibilities: GATE, NCYC
-        self.instrument.write(f"C{channel}:BTWV GATE_NCYC {mode}")
+        self.instrument.write(f"C{channel}:BTWV GATE_NCYC, {mode}")
 
     def set_burst_trigger_source(self, channel, source):
         #possibilities: MAN, EXT, TIM
-        self.instrument.write(f"C{channel}:BTWV TRSR {source}")
+        self.instrument.write(f"C{channel}:BTWV TRSR, {source}")
 
     def set_burst_trigger_edge(self, channel, edge):
         #possibilities: RISE, FALL
-        self.instrument.write(f"C{channel}:BTWV TRED {edge}")
+        self.instrument.write(f"C{channel}:BTWV TRED, {edge}")
 
     def set_trigger_delay(self, channel, delay):
-        self.instrument.write(f"C{channel}:BTWV DLAY {delay}")
+        self.instrument.write(f"C{channel}:BTWV DLAY, {delay}")
 
     def set_ncycles(self, channel, count):
         #INF, 1,2...
-        self.instrument.write(f"C{channel}:BTWV TIME {count}")
-
+        self.instrument.write(f"C{channel}:BTWV TIME, {count}")
     def close(self):
         self.instrument.close()
         self.rm.close()
@@ -73,7 +72,9 @@ class SDG1062X:
         
         for channel in [1,2]:
 
-            self.set_waveform(channel = channel, waveform="SQU")
+            self.set_waveform(channel = channel, waveform="SQUARE")
+            self.set_high_level(channel = channel, high_level=5)
+            self.set_low_level(channel = channel, low_level=0)
             self.burst_enable(channel = channel, mode="ON")
             self.burst_enable(channel = channel, mode="ON")
             self.set_burst_trigger_source(channel = channel, source="EXT")
@@ -100,4 +101,4 @@ class SDG1062X:
 if __name__ == "__main__":
 
     sdg = SDG1062X()
-    sdg.experiment_setup(frequency=1000, absolute_phase_delay=0, releative_phase_delay=90)
+    sdg.experiment_setup(frequency=100, delay_ch1=3.5e-3, delay_ch2=1e-3, duty_cycle_ch1=80)
