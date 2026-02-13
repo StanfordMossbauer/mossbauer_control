@@ -38,21 +38,21 @@ class DS360:
     def output_off(self):
         self.instrument.write("OUTE 0")
 
-    def experiment_setup(self,f=30,A=6.579):
+    def experiment_setup(self,f=200,Vpp=10):
         self.set_sine()
         self.set_frequency(f)
-        self.set_Vpp(A)
+        self.set_Vpp(Vpp)
         self.set_offset(0)
         self.output_on()
 
 if __name__=='__main__':
 
     drive = DS360(gpib_address = 8)
-    amp = 6.579
-    offset_V = amp/2
+    Vpp = 6.579
+    offset_V = 0
     drive.set_sine()
     drive.set_frequency(30)
-    drive.set_amplitude(amp)
+    drive.set_Vpp(Vpp)
     drive.set_offset(offset_V)
     drive.output_on()
 
