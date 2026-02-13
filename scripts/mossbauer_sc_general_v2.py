@@ -122,7 +122,7 @@ class slowcontrol():
 	
 	@property
 	def camera_duty_cycle(self):
-		return 2*self.camera_exposure_time*self.piezo_frequency
+		return 2*self.camera_exposure_time*self.piezo_frequency*100
 
 
 	############################################################## THREADS ########################################################################
@@ -231,7 +231,7 @@ class slowcontrol():
 		def run():
 			while not stop.is_set():
 				# Poll sensor
-				self.latest_T, self.latest_P, self.latest_H = self.yoctopuce.measure()
+				self.latest_T, self.latest_H, self.latest_P = self.yoctopuce.measure()
 				
 				# Wait for poll interval
 				if stop.wait(poll_interval):
@@ -363,8 +363,8 @@ class slowcontrol():
 		
 			remain = self.data_recording_interval - (time.time() - t0)
 			
-			print(f"[{ts.isoformat()}] strain_small={sp_strain:.6g}  rtd_diff={rtd_diff:.6g}  rtd_abs={rtd_abs:.6g} "
-			f"A={A:.6g} Vpp_set {Vpp_set}  phi={phi:.6g}  f={f:.6g} (set {f_set})  I={sp_current_set:.6g} H={H:.6g} P={P:.6g} T={T:.6g}")
+			print(f"[{ts.isoformat()}] strain_small={sp_strain:.3e}  rtd_diff={rtd_diff:.4e}  rtd_abs={rtd_abs:.4e} "
+			f"A={A:.3e} Vpp_set {Vpp_set}  phi={phi:.1f}  f={f:.1f} (set {f_set})  sp_current={sp_current_set:.1e} H={H:.1f} P={P:.2f} T={T:.2f}")
 			
 			self.database.insert_snapshot(ts,
 				rtd_diff, rtd_abs,
@@ -421,7 +421,7 @@ if __name__ == "__main__" :
 	slow_control.scan_velocity_integration_time=300
 	slow_control.data_recording_interval = 1
 
-
+"""
 	try:
 		slow_control.start_instruments()
 		time.sleep(5)
@@ -431,3 +431,4 @@ if __name__ == "__main__" :
 		print("\n[INFO] KeyboardInterrupt, stopping...")
 	finally:
 		slow_control.stop()
+"""

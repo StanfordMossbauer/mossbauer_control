@@ -89,9 +89,7 @@ class SDG1062X:
         #DAQ input
         self.set_frequency(channel = 2, frequency=frequency)
         self.set_ncycles(channel = 2, count=1)
-        self.set_trigger_delay(channel = 2, delay=delay_ch2)
-
-            
+        self.set_trigger_delay(channel = 2, delay=delay_ch2)     
         
         self.set_phase(channel = 2, phase=delay_ch2)
 
