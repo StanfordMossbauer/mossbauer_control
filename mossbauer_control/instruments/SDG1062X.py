@@ -10,6 +10,8 @@ class SDG1062X:
         self.rm = pyvisa.ResourceManager()
         self.instrument = self.rm.open_resource(self.resource_name)
 
+    def output(self,channel,output = "ON"):
+        self.instrument.write(f"C{channel}:OUTP {output}")
 
     #Basic Waveve form Generation Functions (BSWV)
 
@@ -82,23 +84,33 @@ class SDG1062X:
             
 
         #Camera trigger
+
         self.set_frequency(channel = 1, frequency=2*frequency)
         self.set_trigger_delay(channel = 1, delay=delay_ch1)
+        self.set_burst_mode(channel=1, mode = "NCYC")
         self.set_ncycles(channel = 1, count=2)
         self.set_duty_cycle(channel = 1, duty_cycle= duty_cycle_ch1)
+        
 
         #DAQ input
         self.set_frequency(channel = 2, frequency=frequency)
+        self.set_burst_mode(channel=2, mode = "NCYC")
         self.set_ncycles(channel = 2, count=1)
-        self.set_trigger_delay(channel = 2, delay=delay_ch2)     
-        
-        self.set_phase(channel = 2, phase=delay_ch2)
+        self.set_trigger_delay(channel = 2, delay=delay_ch2) 
 
-       
-            
+
+        
+        #For some reason enabling output 1 after is the way to make sure ch2 is always triggered! 
+         
+        self.output(channel =2, output = "ON")
+        self.output(channel =1, output ="ON")  
+        
+
+        
 
 
 if __name__ == "__main__":
 
     sdg = SDG1062X()
-    sdg.experiment_setup(frequency=100, delay_ch1=3.5e-3, delay_ch2=1e-3, duty_cycle_ch1=80)
+    
+    sdg.experiment_setup(frequency=100, delay_ch1=4.5e-3, delay_ch2=2.5e-3, duty_cycle_ch1=20)

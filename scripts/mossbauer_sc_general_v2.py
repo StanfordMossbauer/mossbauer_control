@@ -118,7 +118,7 @@ class slowcontrol():
         
 	@property
 	def camera_trigger_delay(self):
-		return 0.25 / self.piezo_frequency - 0.5*self.camera_exposure_time
+		return 0.5 / self.piezo_frequency - 0.5*self.camera_exposure_time
 	
 	@property
 	def camera_duty_cycle(self):
@@ -294,6 +294,7 @@ class slowcontrol():
 		self.lock_in.experiment_setup()
 		
 		print("[INFO] Setting up trigger generator...")
+		print(self.camera_daq_delay)
 		self.trigger_generator.experiment_setup(frequency=self.piezo_frequency, delay_ch1=self.camera_trigger_delay, delay_ch2=self.camera_daq_delay, duty_cycle_ch1=self.camera_duty_cycle)
 
 		print("[INFO] Setting up slow piezo drive...")
@@ -307,6 +308,9 @@ class slowcontrol():
 		
 		print("[INFO] Setting up RTD nanovoltmeter...")
 		self.RTD_nanovoltmeter.experiment_thermo_setup()	
+
+
+	def start_threads(self):
 
 		# Start the threads;
 		print("[INFO] Starting monitoring threads...")
@@ -421,9 +425,15 @@ if __name__ == "__main__" :
 	slow_control.scan_velocity_integration_time=300
 	slow_control.data_recording_interval = 1
 
+	slow_control.start_instruments()
+
+	print(f"camera trigger delay {slow_control.camera_trigger_delay*1e3} ms")
+	print(f"camera daq delay {slow_control.camera_daq_delay*1e3} ms")
+
 """
 	try:
 		slow_control.start_instruments()
+		slow_control.start_threads(self)
 		time.sleep(5)
 		slow_control.start_data_recording()
 
@@ -431,4 +441,5 @@ if __name__ == "__main__" :
 		print("\n[INFO] KeyboardInterrupt, stopping...")
 	finally:
 		slow_control.stop()
+
 """
