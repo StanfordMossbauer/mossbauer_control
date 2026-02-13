@@ -209,7 +209,7 @@ class slowcontrol():
 				
 				# Check if it's time to poll temperature
 				if now - last_poll_time >= poll_interval:
-					ch1, ch2 = self.thermo.measure_both()
+					ch1, ch2 = self.RTD_nanovoltmeter.measure_both()
 					self.latest_rtd_diff = ch1
 					self.latest_rtd_abs  = ch2
 					last_poll_time = now
@@ -286,7 +286,7 @@ class slowcontrol():
 	def start_instruments(self):
 
 		#Setup the instruments;		
-		self.fast_piezo_drive.experiment_setup(f=self.fast_freq,Vpp=self.Vpp_set)
+		self.fast_piezo_drive.experiment_setup(f=self.piezo_frequency,Vpp=self.Vpp_set)
 		self.lock_in.experiment_setup()
 		self.trigger_generator.experiment_setup(frequency=self.piezo_frequency, delay_ch1=self.camera_trigger_delay, delay_ch2=self.camera_daq_delay, duty_cycle_ch1=self.camera_duty_cycle)
 
@@ -312,7 +312,7 @@ class slowcontrol():
 		
 	
 	def fetch_data(self):
-    	# This script is used to fetch the data that the instruments are ; 
+		# This method fetches and logs data from all instruments 
 		while True:
 			t0 = time.time()
 			ts= datetime.now(timezone.utc)
@@ -324,7 +324,7 @@ class slowcontrol():
 			sp_strain = getattr(self, 'latest_sp_strain', -1)
 			
 			Vpp_set  = getattr(self, 'Vpp_set',-1)
-			f_set  = getattr(self, 'f_set', -1 )
+			f_set  = getattr(self, 'piezo_frequency', -1 )
 			A      = getattr(self, 'latest_A',-1)
 			phi    = getattr(self, 'latest_phi',-1)
 			f  = getattr(self, 'latest_f',-1)
@@ -370,7 +370,7 @@ class slowcontrol():
 		if self.mode == 'scan': 
 			self.velocity_scan_stopper.set() 
 		if self.mode == 'fixed':
-			self.slow_piezo_flip_stopper.set()	#soes this set current to 0? CHECK!
+			self.slow_piezo_flip_stopper.set()	# Does this set current to 0? TODO: Check!
  
 
 
@@ -391,8 +391,8 @@ if __name__ == "__main__" :
 	slow_control = slowcontrol(mode=args.mode)
 
 	slow_control.Vpp_set = 15
-	slow_control.fast_freq = 200
-	slow_control.exposure_time = 1e-3
+	slow_control.piezo_frequency = 200
+	slow_control.camera_exposure_time = 1e-3
 	
 	slow_control.scan_velocity_list = np.linspace(0.001e-3,0.6e-3,15)
 	slow_control.scan_velocity_integration_time=300
