@@ -294,7 +294,6 @@ class slowcontrol():
 		self.lock_in.experiment_setup()
 		
 		print("[INFO] Setting up trigger generator...")
-		print(self.camera_daq_delay)
 		self.trigger_generator.experiment_setup(frequency=self.piezo_frequency, delay_ch1=self.camera_trigger_delay, delay_ch2=self.camera_daq_delay, duty_cycle_ch1=self.camera_duty_cycle)
 
 		print("[INFO] Setting up slow piezo drive...")
@@ -425,15 +424,10 @@ if __name__ == "__main__" :
 	slow_control.scan_velocity_integration_time=300
 	slow_control.data_recording_interval = 1
 
-	slow_control.start_instruments()
 
-	print(f"camera trigger delay {slow_control.camera_trigger_delay*1e3} ms")
-	print(f"camera daq delay {slow_control.camera_daq_delay*1e3} ms")
-
-"""
 	try:
 		slow_control.start_instruments()
-		slow_control.start_threads(self)
+		slow_control.start_threads()
 		time.sleep(5)
 		slow_control.start_data_recording()
 
