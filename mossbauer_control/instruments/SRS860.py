@@ -21,6 +21,7 @@ TIME_CONSTANTS = {0: 1e-6, 1:3e-6,
 }
 
 # Sensitivities are in volts
+# The senstivities index is reversed because of the new srs module; f(x)= 27-x
 SENSITIVITIES= {0: 1, 1: 500e-3, 2: 200e-3, 3: 100e-3, 4: 50e-3, 5: 20e-3,
     6: 10e-3, 7: 5e-3, 8: 2e-3, 9: 1e-3, 10: 500e-6, 11: 200e-6, 
     12: 100e-6, 13: 50e-6, 14: 20e-6, 15: 10e-6, 16: 5e-6, 17: 2e-6, 
@@ -59,7 +60,9 @@ class SRS860:
         return MAP[actual_value]
     
     def get_time_constant(self):
-        return float(self.instrument.query(f"OFLT ?"))
+        index = float(self.instrument.query(f"OFLT?")).strip()
+        val = TIME_CONSTANTS[index]
+        return float 
 
     def set_output_amplitude(self, amplitude):
         self.instrument.write(f"SLVL {amplitude}")

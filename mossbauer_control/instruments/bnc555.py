@@ -7,6 +7,7 @@ import os
 from pyvisa.constants import ControlFlow, Parity, StopBits
 import pandas as pd
 
+#https://www.artisantg.com/info/Berkeley_Nucleonics_555_Digital_Delay_Pulse_Generator_Manual.PDF
 
 class bnc555:
     def __init__(self, gpib_address=1):
@@ -41,9 +42,9 @@ class bnc555:
     def set_clock_mode(self, mode='BURST'): #usually burst mode
         self.instrument.write(f":PULSE0:MODE {mode}")
 
-    def set_clock_f(self, period=0.00032):
-        #somehow this is in units of 10 seconds. will figure it out in the future.
-        self.instrument.write(f":PULSE0:PER {period}")
+    def set_pulse_period(self, period_s=0.0032):
+        period_instrument = period_s*0.1
+        self.instrument.write(f":PULSE0:PER {period_instrument}")
 
     def set_ext_trigger(self):
         self.instrument.write(":PULSE0:EXT:MODE TRIG")
@@ -56,11 +57,13 @@ class bnc555:
     def burst_count(self, channel, count):
         self.instrument.write(f":PULSE{channel}:BCO {count}")
     
-    def pulse_width(self, channel, width):
-       self.instrument.write(f":PULSE{channel}:WIDT {width}")
+    def pulse_width(self, channel, width_s):
+        width_instrument = width_s*10
+        self.instrument.write(f":PULSE{channel}:WIDT {width_instrument}")
 
-    def pulse_delay(self, channel, delay):
-        self.instrument.write(f":PULSE{channel}:DEL {delay}")
+    def pulse_delay(self, channel, delay_s):
+        delay_instrument = delay_s*10
+        self.instrument.write(f":PULSE{channel}:DEL {delay_instrument}")
 
     def channel_mode(self, channel, mode='BURST'):
         self.instrument.write(f":PULSE{channel}:CMOD {mode}")
@@ -68,17 +71,40 @@ class bnc555:
     def set_amplitude(self, amplitude):
         self.instrument.write(f":AMPL {amplitude}")
 
-    def experiment_setup(self, f=40, nbursts=5,delay=0):
-        #note there is an extra division by 10 because this is the weird unit of set_clock_f
-        pulse_period =  int((1/(f*nbursts*2*10)-1e-7)*1e6)/1e6
+    def set_trig_level(self,level):
+        self.instrument.write(f":LEV {level}")
+
+
+
+        
+    def experiment_setup(self, width_s = 1e-3, delay_s = 0.75e-3):
+               
+        self.setup()   
+        self.reset()
+
+        #configure sys clock for 300Hz from 60Hz trigger
+        self.set_clock_mode('SING')
+        self.set_ext_trigger()
+        self.set_trig_level(3)
+        self.enable(0, 'ON')
+        self.enable(1, 'ON')
+
+        #its important that width+delay is at least as long as the period we want to run the camera, in order to avoid extra triggering
+        self.pulse_width(1, width_s)
+        self.pulse_delay(1, delay_s)
+
+
+    def experiment_setup_old(self, f=40, nbursts=5,delay=0):
+        pulse_period =  int((1/(f*nbursts*2)-1e-7)*1e6)/1e6
         self.setup()   
         self.reset()
 
         #configure sys clock for 300Hz from 60Hz trigger
         self.set_clock_mode('BURST')
         self.set_ext_trigger()
+        self.set_trig_level(3)
         self.enable(0, 'ON')
-        self.set_clock_f(pulse_period)
+        self.set_pulse_period(pulse_period)
         self.burst_count(0, nbursts)
 
         #set channel 1 for camera trigger
@@ -87,6 +113,13 @@ class bnc555:
         self.burst_count(1, nbursts)
         self.pulse_width(1, 0.0001)
         self.pulse_delay(1, delay)
+        
+        self.enable(2, 'ON')
+        self.channel_mode(1, 'BURST')
+        self.burst_count(1, nbursts)
+        self.pulse_width(1, 0.0001)
+        self.pulse_delay(1, 0)
+
 
 
 
