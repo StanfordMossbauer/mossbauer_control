@@ -284,31 +284,56 @@ class slowcontrol():
 
 
 	def start_instruments(self):
-		print("Instruments startup...")
+		print("[INFO] Starting instrument setup...")
 
 		#Setup the instruments;		
+		print("[INFO] Setting up fast piezo drive...")
 		self.fast_piezo_drive.experiment_setup(f=self.piezo_frequency,Vpp=self.Vpp_set)
+		
+		print("[INFO] Setting up lock-in amplifier...")
 		self.lock_in.experiment_setup()
+		
+		print("[INFO] Setting up trigger generator...")
 		self.trigger_generator.experiment_setup(frequency=self.piezo_frequency, delay_ch1=self.camera_trigger_delay, delay_ch2=self.camera_daq_delay, duty_cycle_ch1=self.camera_duty_cycle)
 
-		self.slow_piezo_drive.experiment_setup() 
+		print("[INFO] Setting up slow piezo drive...")
+		self.slow_piezo_drive.experiment_setup()
+		
+		print("[INFO] Setting up position nanovoltmeter...")
 		self.position_nanovoltmeter.experiment_voltmeter_setup()
 
+		print("[INFO] Setting up RTD voltage supply...")
 		self.RTD_voltagesupply.experiment_setup()
+		
+		print("[INFO] Setting up RTD nanovoltmeter...")
 		self.RTD_nanovoltmeter.experiment_thermo_setup()	
 
 		# Start the threads;
+		print("[INFO] Starting monitoring threads...")
+		
+		print("[INFO] Starting fast piezo polling thread...")
 		self.fast_piezo_poll_stopper=self.fast_piezo_poll_thread(0.2)
+		
+		print("[INFO] Starting slow piezo polling thread...")
 		self.slow_piezo_poll_stopper = self.slow_piezo_poll_thread(0.2)
+		
+		print("[INFO] Starting Yoctopuce environmental sensor thread...")
 		self.yocto_poll_stopper= self.yocto_poll_thread(poll_interval=0.6)
+		
+		print("[INFO] Starting RTD temperature monitoring thread...")
 		self.rtd_flip_and_poll_stopper = self.rtd_flip_and_poll_thread(poll_interval=0.2, settle_s=0.2)
 
 		
 		if self.mode == 'scan': 
+			print("[INFO] Configuring scan mode - setting piezo current to 0...")
 			self.sp_current_set = 0e-9
+			print("[INFO] Starting velocity scan thread...")
 			self.velocity_scan_stopper=self.velocity_scan_thread()
 		if self.mode == 'fixed':
+			print("[INFO] Configuring fixed mode - starting piezo current flip thread...")
 			self.slow_piezo_flip_stopper = self.slow_piezo_flip_thread()
+		
+		print("[INFO] All instruments and threads started successfully!")
 	
 		
 	
