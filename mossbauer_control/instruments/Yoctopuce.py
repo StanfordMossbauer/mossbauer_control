@@ -67,6 +67,9 @@ class Yoctopuce():
         currentP= float(self.pressure.get_currentValue())
 
         return currentT, currentH, currentP
+    
+    def close(self):
+        pass
 
     
 if __name__ == "__main__":

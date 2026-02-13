@@ -148,6 +148,8 @@ class SRS860:
         self.differential_measurement()
         self.DC_mode()
         self.float_mode()
+
+    
         
         
         

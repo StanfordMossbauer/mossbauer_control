@@ -108,7 +108,7 @@ class slowcontrol():
 		self.rtd_switch_interval = 10 		
 		self.sp_current_set = 0e-9
 		self.slow_piezo_switch_interval = 500
-		self.fetch_data_interval = 1
+		self.data_recording_interval = 1
 		
 		    
 
@@ -284,6 +284,7 @@ class slowcontrol():
 
 
 	def start_instruments(self):
+		print("Instruments startup...")
 
 		#Setup the instruments;		
 		self.fast_piezo_drive.experiment_setup(f=self.piezo_frequency,Vpp=self.Vpp_set)
@@ -311,8 +312,9 @@ class slowcontrol():
 	
 		
 	
-	def fetch_data(self):
+	def start_data_recording(self):
 		# This method fetches and logs data from all instruments 
+		print("Beginning data recoring...")
 		while True:
 			t0 = time.time()
 			ts= datetime.now(timezone.utc)
@@ -334,7 +336,7 @@ class slowcontrol():
 			P		= getattr(self, 'latest_P', -1)
 			T		= getattr(self, 'latest_T', -1)
 		
-			remain = self.fetch_data_interval - (time.time() - t0)
+			remain = self.data_recording_interval - (time.time() - t0)
 			
 			print(f"[{ts.isoformat()}] strain_small={sp_strain:.6g}  rtd_diff={rtd_diff:.6g}  rtd_abs={rtd_abs:.6g} "
 			f"A={A:.6g} Vpp_set {Vpp_set}  phi={phi:.6g}  f={f:.6g} (set {f_set})  I={sp_current_set:.6g} H={H:.6g} P={P:.6g} T={T:.6g}")
@@ -349,10 +351,6 @@ class slowcontrol():
 				time.sleep(remain)
 		
 
-	def run(self):
-		self.start_instruments()
-		time.sleep(5)
-		self.fetch_data()
 		
 	def stop(self):
 
@@ -396,11 +394,14 @@ if __name__ == "__main__" :
 	
 	slow_control.scan_velocity_list = np.linspace(0.001e-3,0.6e-3,15)
 	slow_control.scan_velocity_integration_time=300
-	slow_control.fetch_data_interval = 1
+	slow_control.data_recording_interval = 1
 
 
 	try:
-		slow_control.run()   
+		slow_control.start_instruments()
+		time.sleep(5)
+		slow_control.start_data_recording()
+
 	except KeyboardInterrupt:
 		print("\n[INFO] KeyboardInterrupt, stopping...")
 	finally:

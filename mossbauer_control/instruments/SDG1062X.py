@@ -1,3 +1,5 @@
+#https://siglentna.com/resources/documents/waveform-generators/#sdg1000x-plus-series
+
 import pyvisa
 
 
@@ -11,6 +13,10 @@ class SDG1062X:
 
     #Basic Waveve form Generation Functions (BSWV)
 
+    def set_waveform(self, channel, waveform = "SQU"):
+        #possibilities:SINE, SQUARE, RAMP, PULSE, NOISE, ARB, DC, PRBS, IQ
+        self.instrument.write(f"C{channel}:BSWV WVTP,{waveform}")
+
     def set_frequency(self, channel, frequency):
         self.instrument.write(f"C{channel}:BSWV FRQ,{frequency}")
 
@@ -20,18 +26,19 @@ class SDG1062X:
     def set_amplitude(self, channel, amplitude):
         self.instrument.write(f"C{channel}:BSWV AMP,{amplitude}")
 
+    def set_offset(self, channel, offset):
+        self.instrument.write(f"C{channel}:BSWV OFST,{offset}")
+
     def set_high_level(self, channel, high_level):
         self.instrument.write(f"C{channel}:BSWV HLEV,{high_level}")
 
     def set_low_level(self, channel, low_level):
         self.instrument.write(f"C{channel}:BSWV LLEV,{low_level}")  
+   
+    def set_duty_cycle(self, channel, duty_cycle):
+        #0 to 100, only if pulse or square
+        self.instrument.write(f"C{channel}:BSWV DUTY,{duty_cycle}")  
 
-    def set_waveform(self, channel, waveform = "SQU"):
-        #possibilities:SINE, SQUARE, RAMP, PULSE, NOISE, ARB, DC, PRBS, IQ
-        self.instrument.write(f"C{channel}:BSWV WVTP,{waveform}")
-
-    def set_offset(self, channel, offset):
-        self.instrument.write(f"C{channel}:BSWV OFST,{offset}")
 
     #Burst Trigger Functions (BTWV)
 
@@ -85,8 +92,6 @@ class SDG1062X:
         self.set_trigger_delay(channel = 2, delay=delay_ch2)
 
             
-
-
         
         self.set_phase(channel = 2, phase=delay_ch2)
 
