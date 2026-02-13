@@ -79,7 +79,7 @@ class slowcontrol():
 		self.RTD_nanovoltmeter = keithley(gpib_address = 7) 								# RTD readout 
 		self.pulse_generator = bnc555(gpib_address = 1)										# Camera Trigger;
 		self.yoctopuce = Yoctopuce('METEOMK2-2377A2')										# Yoctopuce for temperature, humidity and pressure;
-		self.database = sql_writer(table='sc')	
+		self.database = sql_writer(table='slowcontrol')
 		
 
 
@@ -388,20 +388,20 @@ if __name__ == "__main__" :
 	args = parser.parse_args()
 
 	#HERE SET PARMAETERS	
-	sc = slowcontrol(mode=args.mode)
+	slow_control = slowcontrol(mode=args.mode)
 
-	sc.Vpp_set = 15
-	sc.fast_freq = 200
-	sc.exposure_time = 1e-3
+	slow_control.Vpp_set = 15
+	slow_control.fast_freq = 200
+	slow_control.exposure_time = 1e-3
 	
-	sc.scan_velocity_list = np.linspace(0.001e-3,0.6e-3,15)
-	sc.scan_velocity_integration_time=300
-	sc.fetch_data_interval = 1
+	slow_control.scan_velocity_list = np.linspace(0.001e-3,0.6e-3,15)
+	slow_control.scan_velocity_integration_time=300
+	slow_control.fetch_data_interval = 1
 
 
 	try:
-		sc.run()   
+		slow_control.run()   
 	except KeyboardInterrupt:
 		print("\n[INFO] KeyboardInterrupt, stopping...")
 	finally:
-		sc.stop()
+		slow_control.stop()
