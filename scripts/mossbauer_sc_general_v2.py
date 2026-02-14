@@ -420,7 +420,7 @@ if __name__ == "__main__" :
 	slow_control.piezo_frequency = 200
 	slow_control.camera_exposure_time = 1e-3
 	
-	slow_control.scan_velocity_list = np.linspace(0.001e-3,0.6e-3,15)
+	slow_control..scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
 	slow_control.scan_velocity_integration_time=300
 	slow_control.data_recording_interval = 1
 
@@ -436,4 +436,3 @@ if __name__ == "__main__" :
 	finally:
 		slow_control.stop()
 
-"""
