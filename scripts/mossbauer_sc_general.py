@@ -50,7 +50,7 @@ class sql_writer:
 				 user='writer',
 				 password='mossbauer_writer',
 				 database='slowcontrol',
-				 table='RTD'):
+				 table='sc'):
 		self.table = table  
 		self.conn = mysql.connector.connect(
 			host=host, user=user, password=password, database=database,

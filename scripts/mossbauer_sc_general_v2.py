@@ -49,9 +49,8 @@ class sql_writer:
 			self.cur = self.conn.cursor()
 
 		sql = (f"INSERT INTO `{self.table}` "
-			   "(`TIME`,`rtd_diff`,`rtd_abs`,`sp_current_set`,`sp_strain`,`Vpp_set`, `f_set`, `A`, `phi`, `f`, `H`, `P`, `T`) "
+			   "(`TIME`,`diff_T`,`abs_T`,`current`,`data_V`,`A_set`, `f_set`, `A`, `phi`, `f_ref`, `H`, `P`, `T`) "
 			   "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
-		
 		vals = (
 			t_dt_utc,
 			_q12(rtd_diff), _q12(rtd_abs),
@@ -75,11 +74,11 @@ class slowcontrol():
 		self.trigger_generator = SDG1062X("USB0::0xF4EC::0x1103::SDG1PA0C900622::INSTR")	# Camera Triggers generator;
 		self.position_nanovoltmeter = keithley(gpib_address = 6)							# Nanovoltmeter for slow stage position;
 		self.lock_in = SRS860(gpib_address = 10)											# Lock-in for fast stage position readout;
-		self.RTD_voltagesupply = dc205() 													# RTD voltage supply 
+		self.RTD_voltagesupply = dc205(address="ASRL6::INSTR") 													# RTD voltage supply 
 		self.RTD_nanovoltmeter = keithley(gpib_address = 7) 								# RTD readout 
 		self.pulse_generator = bnc555(gpib_address = 1)										# Camera Trigger;
 		self.yoctopuce = Yoctopuce('METEOMK2-2377A2')										# Yoctopuce for temperature, humidity and pressure;
-		self.database = sql_writer(table='slowcontrol')
+		self.database = sql_writer(table='sc')
 		
 
 
@@ -420,7 +419,7 @@ if __name__ == "__main__" :
 	slow_control.piezo_frequency = 200
 	slow_control.camera_exposure_time = 1e-3
 	
-	slow_control..scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
+	slow_control.scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
 	slow_control.scan_velocity_integration_time=300
 	slow_control.data_recording_interval = 1
 
