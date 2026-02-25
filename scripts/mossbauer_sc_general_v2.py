@@ -38,7 +38,7 @@ class sql_writer:
 		self.conn = mysql.connector.connect(host=host, user=user, password=password, database=database,autocommit=True, connection_timeout=5)
 		self.cur = self.conn.cursor()
 
-	def insert_snapshot(self, t_dt_utc, rtd_diff, rtd_abs, 
+	def insert_snapshot(self, t_dt_utc, rtd_diff, rtd_abs, rtd_voltage_set,
 						sp_current_set, sp_strain, Vpp_set, f_set, 
 						A, phi, f, H, P, T):
 		
@@ -49,11 +49,12 @@ class sql_writer:
 			self.cur = self.conn.cursor()
 
 		sql = (f"INSERT INTO `{self.table}` "
-			   "(`TIME`,`diff_T`,`abs_T`,`current`,`data_V`,`A_set`, `f_set`, `A`, `phi`, `f_ref`, `H`, `P`, `T`) "
-			   "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
+			   "(`TIME`,`rtd_diff`,`rtd_abs`,`rtd_voltage_set`,`sp_current_set`,`sp_strain`,`Vpp_set`, `f_set`, `A`, `phi`, `f`, `H`, `P`, `T`) "
+			   "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
+		
 		vals = (
 			t_dt_utc,
-			_q12(rtd_diff), _q12(rtd_abs),
+			_q12(rtd_diff), _q12(rtd_abs), _q12(rtd_voltage_set),
 			_q12(sp_current_set), _q12(sp_strain),
 			_q12(Vpp_set), _q12(f_set), 
 			_q12(A), _q12(phi), _q12(f), _q12(H), _q12(P), _q12(T)
@@ -78,7 +79,7 @@ class slowcontrol():
 		self.RTD_nanovoltmeter = keithley(gpib_address = 7) 								# RTD readout 
 		self.pulse_generator = bnc555(gpib_address = 1)										# Camera Trigger;
 		self.yoctopuce = Yoctopuce('METEOMK2-2377A2')										# Yoctopuce for temperature, humidity and pressure;
-		self.database = sql_writer(table='sc')
+		self.database = sql_writer(table='science_run1')
 		
 
 
@@ -89,6 +90,7 @@ class slowcontrol():
 		self.latest_A  = 0 
 		self.latest_phi = 0 
 		self.latest_f = 0
+		self.latest_rtd_voltage_set = 0
 
 		#Fundamental parameters;
 		# Mode: 'fixed', 'scan'
@@ -103,11 +105,11 @@ class slowcontrol():
 		self.scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
 		self.scan_velocity_integration_time=600  #only for scan; how long we stay at each velocity;
 
-		self.RTD_voltage_set = 2 
+		self.rtd_voltage_set = 2
 		self.rtd_switch_interval = 10 		
 		self.sp_current_set = 0e-9
 		self.slow_piezo_switch_interval = 500
-		self.data_recording_interval = 1
+		self.data_recording_interval = 2
 		
 		    
 
@@ -184,7 +186,7 @@ class slowcontrol():
  
  
  
-	def rtd_flip_and_poll_thread(self, poll_interval: float = 0.2, settle_s: float = 0.2):
+	def rtd_flip_and_poll_thread(self, poll_interval: float = 1, settle_s: float = 0.2):
 		#Replace the RTD_Flip and start_thermo_latest because we want to synchronize the readout. 
 		stop = threading.Event()
 		
@@ -197,8 +199,8 @@ class slowcontrol():
 				
 				# Check if it's time to flip RTD voltage
 				if now - last_flip_time >= self.rtd_switch_interval:
-					self.RTD_voltage_set = -self.RTD_voltage_set
-					self.RTD_voltagesupply.set_voltage(self.RTD_voltage_set)
+					self.rtd_voltage_set = -self.rtd_voltage_set
+					self.RTD_voltagesupply.set_voltage(self.rtd_voltage_set)
 					last_flip_time = now
 					
 					# Wait for settling after flip
@@ -208,9 +210,10 @@ class slowcontrol():
 				
 				# Check if it's time to poll temperature
 				if now - last_poll_time >= poll_interval:
-					ch1, ch2 = self.RTD_nanovoltmeter.measure_both()
+					ch1, ch2 = self.RTD_nanovoltmeter.measure_both_v2()
 					self.latest_rtd_diff = ch1
 					self.latest_rtd_abs  = ch2
+					self.latest_rtd_voltage_set = self.rtd_voltage_set
 					last_poll_time = now
 				
 				# Short wait before next check
@@ -349,6 +352,8 @@ class slowcontrol():
 			# Use the snapshot to get the current value and then record it.  
 			rtd_diff = getattr(self, 'latest_rtd_diff', -1)
 			rtd_abs  = getattr(self, 'latest_rtd_abs',-1)
+			rtd_voltage_set = getattr(self, 'latest_rtd_voltage_set',-1)
+
 			sp_current_set= getattr(self, 'sp_current_set',-1)
 			sp_strain = getattr(self, 'latest_sp_strain', -1)
 			
@@ -365,11 +370,14 @@ class slowcontrol():
 		
 			remain = self.data_recording_interval - (time.time() - t0)
 			
-			print(f"[{ts.isoformat()}] strain_small={sp_strain:.3e}  rtd_diff={rtd_diff:.4e}  rtd_abs={rtd_abs:.4e} "
-			f"A={A:.3e} Vpp_set {Vpp_set}  phi={phi:.1f}  f={f:.1f} (set {f_set})  sp_current={sp_current_set:.1e} H={H:.1f} P={P:.2f} T={T:.2f}")
+			print(f"[{ts.isoformat()}]"
+		 	f" rtd_diff={rtd_diff:.4e}  rtd_abs={rtd_abs:.4e}, rtd_voltage_set={rtd_voltage_set:.1f},"
+		 	f" strain_small={sp_strain:.3e}, sp_current={sp_current_set:.1e},"
+			f" Vpp_set={Vpp_set}, f_set {f_set}, A={A:.3e}, phi={phi:.1f}, f={f:.1f},"
+			f" H={H:.1f}, P={P:.2f}, T={T:.2f}")
 			
 			self.database.insert_snapshot(ts,
-				rtd_diff, rtd_abs,
+				rtd_diff, rtd_abs, rtd_voltage_set,
 				sp_current_set, sp_strain,
 				Vpp_set, f_set,
 				A, phi, f, H, P, T)
