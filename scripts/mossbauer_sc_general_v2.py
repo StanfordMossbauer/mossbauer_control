@@ -15,6 +15,7 @@ from mossbauer_control.instruments import SDG1062X
 from mossbauer_control.instruments import DS360
 from mossbauer_control.instruments import K263
 from mossbauer_control.instruments import bnc555
+from mossbauer_control.instruments import LK220
 
 import csv 
 import os
@@ -40,7 +41,7 @@ class sql_writer:
 
 	def insert_snapshot(self, t_dt_utc, rtd_diff, rtd_abs, rtd_voltage_set,
 						sp_current_set, sp_strain, Vpp_set, f_set, 
-						A, phi, f, H, P, T):
+						A, phi, f, H, P, T, T_cam):
 		
 		try:
 			self.conn.ping(reconnect=True, attempts=1, delay=0)
@@ -49,15 +50,15 @@ class sql_writer:
 			self.cur = self.conn.cursor()
 
 		sql = (f"INSERT INTO `{self.table}` "
-			   "(`TIME`,`rtd_diff`,`rtd_abs`,`rtd_voltage_set`,`sp_current_set`,`sp_strain`,`Vpp_set`, `f_set`, `A`, `phi`, `f`, `H`, `P`, `T`) "
-			   "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
+			   "(`TIME`,`rtd_diff`,`rtd_abs`,`rtd_voltage_set`,`sp_current_set`,`sp_strain`,`Vpp_set`, `f_set`, `A`, `phi`, `f`, `H`, `P`, `T`, `T_cam`) "
+			   "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
 		
 		vals = (
 			t_dt_utc,
 			_q12(rtd_diff), _q12(rtd_abs), _q12(rtd_voltage_set),
 			_q12(sp_current_set), _q12(sp_strain),
 			_q12(Vpp_set), _q12(f_set), 
-			_q12(A), _q12(phi), _q12(f), _q12(H), _q12(P), _q12(T)
+			_q12(A), _q12(phi), _q12(f), _q12(H), _q12(P), _q12(T), _q12(T_cam)
 		)
 		
 		try:
@@ -80,8 +81,7 @@ class slowcontrol():
 		self.pulse_generator = bnc555(gpib_address = 1)										# Camera Trigger;
 		self.yoctopuce = Yoctopuce('METEOMK2-2377A2')										# Yoctopuce for temperature, humidity and pressure;
 		self.database = sql_writer(table='science_run1')
-		
-
+		self.chiller = LK220(address="ASRL7::INSTR")
 
 		# Latest values;
 		self.latest_rtd_diff=0
@@ -91,6 +91,11 @@ class slowcontrol():
 		self.latest_phi = 0 
 		self.latest_f = 0
 		self.latest_rtd_voltage_set = 0
+
+		self.latest_H = 0
+		self.latest_P = 0
+		self.latest_T = 0
+		self.latest_T_cam = 0
 
 		#Fundamental parameters;
 		# Mode: 'fixed', 'scan'
@@ -225,7 +230,7 @@ class slowcontrol():
 
 	
 	
-	def yocto_poll_thread(self, poll_interval: float = 0.6):
+	def environment_poll_thread(self, poll_interval: float = 0.6):
 		'''
 		temperature sensor; 
 		  '''
@@ -234,6 +239,7 @@ class slowcontrol():
 			while not stop.is_set():
 				# Poll sensor
 				self.latest_T, self.latest_H, self.latest_P = self.yoctopuce.measure()
+				self.latest_T_cam = self.chiller.get_temperature()
 				
 				# Wait for poll interval
 				if stop.wait(poll_interval):
@@ -323,7 +329,7 @@ class slowcontrol():
 		self.slow_piezo_poll_stopper = self.slow_piezo_poll_thread(0.2)
 		
 		print("[INFO] Starting Yoctopuce environmental sensor thread...")
-		self.yocto_poll_stopper= self.yocto_poll_thread(poll_interval=0.6)
+		self.environment_poll_stopper= self.environment_poll_thread(poll_interval=0.6)
 		
 		print("[INFO] Starting RTD temperature monitoring thread...")
 		self.rtd_flip_and_poll_stopper = self.rtd_flip_and_poll_thread(poll_interval=0.2, settle_s=0.2)
@@ -332,6 +338,7 @@ class slowcontrol():
 		if self.mode == 'scan': 
 			print("[INFO] Configuring scan mode - setting piezo current to 0...")
 			self.sp_current_set = 0e-9
+			self.slow_piezo_drive.set_current(self.sp_current_set)
 			print("[INFO] Starting velocity scan thread...")
 			self.velocity_scan_stopper=self.velocity_scan_thread()
 		if self.mode == 'fixed':
@@ -367,20 +374,21 @@ class slowcontrol():
 			H		= getattr(self, 'latest_H', -1)
 			P		= getattr(self, 'latest_P', -1)
 			T		= getattr(self, 'latest_T', -1)
-		
+			T_cam	= getattr(self, 'latest_T_cam', -1)
+	
 			remain = self.data_recording_interval - (time.time() - t0)
 			
 			print(f"[{ts.isoformat()}]"
 		 	f" rtd_diff={rtd_diff:.4e}  rtd_abs={rtd_abs:.4e}, rtd_voltage_set={rtd_voltage_set:.1f},"
 		 	f" strain_small={sp_strain:.3e}, sp_current={sp_current_set:.1e},"
 			f" Vpp_set={Vpp_set}, f_set {f_set}, A={A:.3e}, phi={phi:.1f}, f={f:.1f},"
-			f" H={H:.1f}, P={P:.2f}, T={T:.2f}")
+			f" H={H:.1f}, P={P:.2f}, T={T:.2f}, T_cam={T_cam:.2f}")
 			
 			self.database.insert_snapshot(ts,
 				rtd_diff, rtd_abs, rtd_voltage_set,
 				sp_current_set, sp_strain,
 				Vpp_set, f_set,
-				A, phi, f, H, P, T)
+				A, phi, f, H, P, T, T_cam)
 				
 			if remain > 0:
 				time.sleep(remain)
@@ -392,18 +400,19 @@ class slowcontrol():
 		self.fast_piezo_drive.output_off()
 		self.pulse_generator.close()
 		self.yoctopuce.close()
+		self.chiller.close()
 
 		# Stop the threads; 
 		self.rtd_flip_and_poll_stopper.set()
 		self.slow_piezo_poll_stopper.set()
 		self.fast_piezo_poll_stopper.set()
-		self.yocto_poll_stopper.set()
+		self.environment_poll_stopper.set()
 		
 		# Stop the drive; 
 		if self.mode == 'scan': 
 			self.velocity_scan_stopper.set() 
 		if self.mode == 'fixed':
-			self.slow_piezo_flip_stopper.set()	# Does this set current to 0? TODO: Check!
+			self.slow_piezo_flip_stopper.set()
  
 
 
@@ -425,11 +434,15 @@ if __name__ == "__main__" :
 
 	slow_control.Vpp_set = 15
 	slow_control.piezo_frequency = 200
-	slow_control.camera_exposure_time = 1e-3
+	slow_control.camera_exposure_time = 1.7e-3
 	
 	slow_control.scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
 	slow_control.scan_velocity_integration_time=300
 	slow_control.data_recording_interval = 1
+	slow_control.rtd_switch_interval = 10 		
+	slow_control.sp_current_set = 10e-9
+	slow_control.slow_piezo_switch_interval = 500
+
 
 
 	try:

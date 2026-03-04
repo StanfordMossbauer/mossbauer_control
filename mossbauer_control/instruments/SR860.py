@@ -163,13 +163,13 @@ if __name__ == "__main__":
     srs = SRS860(gpib_address = 10)
     f=41
     
-    srs.experiment_setup(f)
-    #srs.reset()
-    #srs.set_sensitivity(100) #added
+    # srs.experiment_setup(f)
+    srs.reset()
+    srs.set_sensitivity(100) #added
     results = []
     
-    #time_const = 9/f
-    #srs.set_time_constant(time_const)
+    time_const = 9/f
+    srs.set_time_constant(time_const)
     
     i = 0
     while i <10:
@@ -182,9 +182,9 @@ if __name__ == "__main__":
             ))
         i+=1
 
-    directory = 'C:\\Users\\Mossbauer\\Documents\\data\\1117\\'
-    filename = directory + "test_SRS860.csv"
-    pd.DataFrame(results).to_csv(filename, index=False)
+    # directory = 'C:\\Users\\Mossbauer\\Documents\\data\\1117\\'
+    # filename = directory + "test_SRS860.csv"
+    # pd.DataFrame(results).to_csv(filename, index=False)
     
     print('Test 1 done')
     time.sleep(5)

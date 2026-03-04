@@ -1,6 +1,7 @@
 #https://siglentna.com/resources/documents/waveform-generators/#sdg1000x-plus-series
 
 import pyvisa
+import time
 
 
 
@@ -112,5 +113,14 @@ class SDG1062X:
 if __name__ == "__main__":
 
     sdg = SDG1062X()
+    time.sleep(1)
     
-    sdg.experiment_setup(frequency=100, delay_ch1=4.5e-3, delay_ch2=2.5e-3, duty_cycle_ch1=20)
+    piezo_frequency = 200
+    camera_exposure_time = 1.7e-3
+
+
+    camera_daq_delay = 0.25/piezo_frequency
+    camera_trigger_delay = 0.5 / piezo_frequency - 0.5*camera_exposure_time
+    duty_cycle = 2*camera_exposure_time*piezo_frequency*100
+
+    sdg.experiment_setup(frequency=200, delay_ch1=camera_trigger_delay, delay_ch2 = camera_daq_delay, duty_cycle_ch1=duty_cycle)

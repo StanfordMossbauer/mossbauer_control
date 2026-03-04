@@ -10,7 +10,7 @@ from .BK4060B import BK4060B
 from .HP5335A import HP5335A
 from .base import MossbauerInstrument
 from .SDG1062X import SDG1062X
-
+from .LK220 import LK220
 
 
 # The instrusments that we are now using 
