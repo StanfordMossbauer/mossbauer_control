@@ -144,33 +144,17 @@ class keithley:
     def measure_both_v2(self):  #not averaged
         self.cont_operation(status='OFF')
 
-        self.set_channel(1)
-        time.sleep(0.04)
+        
         ch1_reading = self.read()
         self.set_channel(2)
-        time.sleep(0.04)
+        time.sleep(0.1)
         ch2_reading = self.read()
+        self.set_channel(1)
         #print(ch2_reading)
         
         return ch1_reading, ch2_reading
     
-    def measure_both_v3(self):  #not averaged
-        self.cont_operation(status='OFF')
 
-        self.set_channel(1)
-        time.sleep(0.1)
-
-        for i in range(10):
-            t =time.time()
-            ch1_reading = self.read()
-            print(ch1_reading, time.time()-t)
-        time.sleep(0.1)
-        self.set_channel(2)
-        time.sleep(0.1)
-        ch2_reading = self.read()
-        print(ch2_reading)
-        
-        return ch1_reading, ch2_reading
     
     def experiment_voltmeter_setup(self): 
         self.set_voltage_mode()
@@ -193,8 +177,32 @@ class keithley:
 
         
     def experiment_thermo_setup(self):
+        self.set_voltage_mode()
+        self.clear_buffer()
+        self.store_raw_readings()
+        self.cont_operation()
+        self.set_channel(1)
         return 
     
+
+    
+    def measure_both_v3(self):  #not averaged
+        self.cont_operation(status='OFF')
+
+        self.set_channel(1)
+        time.sleep(0.1)
+
+        for i in range(10):
+            t =time.time()
+            ch1_reading = self.read()
+            print(ch1_reading, time.time()-t)
+        time.sleep(0.1)
+        self.set_channel(2)
+        time.sleep(0.1)
+        ch2_reading = self.read()
+        print(ch2_reading)
+        
+        return ch1_reading, ch2_reading
 
 if __name__=='__main__':
 

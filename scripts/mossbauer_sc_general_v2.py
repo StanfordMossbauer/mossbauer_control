@@ -102,7 +102,7 @@ class slowcontrol():
 		self.mode = mode
 
 		#Fixed mode parameters;
-		self.Vpp_set = 15
+		self.Vpp_set = 1.8
 		self.piezo_frequency = 200
 		self.camera_exposure_time = 1e-3
 
@@ -112,7 +112,7 @@ class slowcontrol():
 
 		self.rtd_voltage_set = 2
 		self.rtd_switch_interval = 10 		
-		self.sp_current_set = 0e-9
+		self.sp_current_set = 10e-9
 		self.slow_piezo_switch_interval = 500
 		self.data_recording_interval = 2
 		
@@ -332,7 +332,7 @@ class slowcontrol():
 		self.environment_poll_stopper= self.environment_poll_thread(poll_interval=0.6)
 		
 		print("[INFO] Starting RTD temperature monitoring thread...")
-		self.rtd_flip_and_poll_stopper = self.rtd_flip_and_poll_thread(poll_interval=0.2, settle_s=0.2)
+		self.rtd_flip_and_poll_stopper = self.rtd_flip_and_poll_thread(poll_interval=0.2, settle_s=1.6)
 
 		
 		if self.mode == 'scan': 
@@ -342,6 +342,8 @@ class slowcontrol():
 			print("[INFO] Starting velocity scan thread...")
 			self.velocity_scan_stopper=self.velocity_scan_thread()
 		if self.mode == 'fixed':
+			self.Vpp_set = 1.8
+			self.fast_piezo_drive.set_Vpp(self.Vpp_set)
 			print("[INFO] Configuring fixed mode - starting piezo current flip thread...")
 			self.slow_piezo_flip_stopper = self.slow_piezo_flip_thread()
 		
@@ -439,7 +441,7 @@ if __name__ == "__main__" :
 	slow_control.scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
 	slow_control.scan_velocity_integration_time=300
 	slow_control.data_recording_interval = 1
-	slow_control.rtd_switch_interval = 10 		
+	slow_control.rtd_switch_interval = 20	
 	slow_control.sp_current_set = 10e-9
 	slow_control.slow_piezo_switch_interval = 500
 
