@@ -140,20 +140,19 @@ class slowcontrol():
 		stop = threading.Event()
 		def run():
 
-			self.sp_current_set = -self.sp_current_set #flip the current to make sure we start with the positive direction;
+			self.sp_current_set = -np.abs(self.sp_current_set) #flip the current to make sure we start with the positive direction;
 
 			while not stop.is_set():
 				
 				# Handle discharge once per cycle (at negative current)
 				if self.sp_current_set < 0:
 					self.slow_piezo_drive.discharge()
+					time.sleep(0.1)
 					print('discharged')  
-					self.slow_piezo_drive.set_current(self.sp_current_set)
 
 				# Flip current direction
 				self.sp_current_set = -self.sp_current_set
 				self.slow_piezo_drive.set_current(self.sp_current_set)
-
 
 				# Wait for switch interval
 				if stop.wait(self.slow_piezo_switch_interval):
