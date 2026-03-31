@@ -214,6 +214,8 @@ class slowcontrol():
 			nextT= time.monotonic() + self.block_unit_time 
 			n_scan_points = len(self.scan_vpp_list)
 			i=0
+			self.fast_piezo_drive.set_Vpp(self.fixed_vpp)
+			self.sp_current_set = -np.abs(self.sp_current_set)
 			
 			
 			while not stop.is_set():
