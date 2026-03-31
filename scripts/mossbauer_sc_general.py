@@ -112,7 +112,7 @@ class slowcontrol():
 		
 		# Velocity Scan? 
 		self.scan = scan_symbol
-		self.scan_velocity_integration_time=600
+		self.block_unit_time=600
 		#self.scan_velocity_list = np.linspace(0.001e-3,0.6e-3,15)
 	
 		self.scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
@@ -194,7 +194,7 @@ class slowcontrol():
 					break
 				self.Slow_current = -self.Slow_current
 				self.calibrator.set_current(self.Slow_current)
-				nextT =time.monotonic()+ self.Slow_switch_interval
+				nextT = nextT + self.Slow_switch_interval
 				if self.Slow_current <0:
 					self.calibrator.discharge()
 					print('discharged')  
@@ -226,7 +226,7 @@ class slowcontrol():
 		stop = threading.Event()
 		def run():
 			n = len(self.scan_vpp_list) # How many velocity we have 
-			nextT = time.monotonic() + self.scan_velocity_integration_time  
+			nextT = time.monotonic() + self.block_unit_time  
 			self.fast_Vpp = self.scan_vpp_list[0]
 			self.drive.set_Vpp(self.fast_Vpp)
 			i=0 
@@ -239,7 +239,7 @@ class slowcontrol():
 				self.drive.set_Vpp(self.fast_Vpp)
 				
 				i= (i+1)%n 
-				nextT =time.monotonic()+ self.scan_velocity_integration_time
+				nextT =time.monotonic()+ self.block_unit_time
 		threading.Thread(target=run, daemon=True).start()
 		return stop 
  
@@ -540,7 +540,7 @@ if __name__ == "__main__" :
 	sc.delay = 0 #be very careful. BNC only accepts some values! If not will set delay to 0!
 
 	sc.scan_velocity_list = np.linspace(0.001e-3,0.6e-3,15)
-	sc.scan_velocity_integration_time=300
+	sc.block_unit_time=300
 
 
 
