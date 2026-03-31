@@ -155,7 +155,7 @@ class slowcontrol():
 		'''
 		stop = threading.Event()
 		def run():
-			nextT = time.monotonic() + self.Slow_switch_interval 
+			nextT = time.monotonic() + self.block_unit_time
 			
 			self.sp_current_set = -np.abs(self.sp_current_set) #flip the current to make sure we start with the positive direction;
 		
@@ -213,7 +213,7 @@ class slowcontrol():
 		def run(): 
 			nextT= time.monotonic() + self.block_unit_time 
 			n_scan_points = len(self.scan_vpp_list)
-			
+			i=0
 			
 			
 			while not stop.is_set():
@@ -468,7 +468,7 @@ class slowcontrol():
 			 f" rtd_diff={rtd_diff:.4e}  rtd_abs={rtd_abs:.4e}, rtd_voltage_set={rtd_voltage_set:.1f},"
 			 f" strain_small={sp_strain:.3e}, sp_current={sp_current_set:.1e},"
 			f" Vpp_set={Vpp_set}, f_set {f_set}, A={A:.3e}, phi={phi:.1f}, f={f:.1f},"
-			f" H={H:.1f}, P={P:.2f}, T={T:.2f}, T_cam={T_cam:.2f}, H_E={H_room:.1f}, P_E={P_room:.1f}, T_E={T_room:.1f}, mode={mode}, block={block_number}")
+			f" H={H:.1f}, P={P:.2f}, T={T:.2f}, T_cam={T_cam:.2f}, H_room={H_room:.1f}, P_room={P_room:.2f}, T_room={T_room:.2f}, mode={mode}, block={block_number}")
 			
 			self.database.insert_snapshot(ts,
 				rtd_diff, rtd_abs, rtd_voltage_set,
@@ -535,7 +535,7 @@ if __name__ == "__main__" :
 	
 	slow_control.fixed_vpp = 1.8
 	slow_control.scan_vpp_list = np.linspace(0.001,13.5,12)
-	slow_control.sp_current_set = 20e-9
+	slow_control.sp_current_set = 19.9e-9 # linti at this resolution, otherwise need to modify control class.
 	
 	slow_control.piezo_frequency = 200
 	slow_control.camera_exposure_time = 1.6e-3
