@@ -41,8 +41,8 @@ class sql_writer:
 
 	def insert_snapshot(self, t_dt_utc, rtd_diff, rtd_abs, rtd_voltage_set,
 						sp_current_set, sp_strain, Vpp_set, f_set, 
-						A, phi, f, H, P, T, T_cam):
-		
+						A, phi, f, H, P, T, T_cam, H_room , P_room , T_room ,mode, block_number ):
+		# the new HE, HP, HT , mode; 
 		try:
 			self.conn.ping(reconnect=True, attempts=1, delay=0)
 		except Exception:
@@ -50,15 +50,15 @@ class sql_writer:
 			self.cur = self.conn.cursor()
 
 		sql = (f"INSERT INTO `{self.table}` "
-			   "(`TIME`,`rtd_diff`,`rtd_abs`,`rtd_voltage_set`,`sp_current_set`,`sp_strain`,`Vpp_set`, `f_set`, `A`, `phi`, `f`, `H`, `P`, `T`, `T_cam`) "
-			   "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
+			   "(`TIME`,`rtd_diff`,`rtd_abs`,`rtd_voltage_set`,`sp_current_set`,`sp_strain`,`Vpp_set`, `f_set`, `A`, `phi`, `f`, `H`, `P`, `T`, `T_cam`, `H_room`, `P_room` , `T_room`, `mode`,`block_number`) "
+			   "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
 		
 		vals = (
 			t_dt_utc,
 			_q12(rtd_diff), _q12(rtd_abs), _q12(rtd_voltage_set),
 			_q12(sp_current_set), _q12(sp_strain),
 			_q12(Vpp_set), _q12(f_set), 
-			_q12(A), _q12(phi), _q12(f), _q12(H), _q12(P), _q12(T), _q12(T_cam)
+			_q12(A), _q12(phi), _q12(f), _q12(H), _q12(P), _q12(T), _q12(T_cam), _q12(H_room), _q12(P_room), _q12(T_room), int(mode), int(block_number)
 		)
 		
 		try:
@@ -83,6 +83,12 @@ class slowcontrol():
 		self.database = sql_writer(table='science_run1')
 		self.chiller = LK220(address="ASRL7::INSTR")
 
+		# The Yoctopuce, but we do not know the serial number of it yet. 
+		# Connect it first and go to the website; 
+		self.yoctopuce2 = Yoctopuce('METEOMK2-2F75B1') 
+
+  
+  
 		# Latest values;
 		self.latest_rtd_diff=0
 		self.latest_rtd_abs=0
@@ -96,32 +102,44 @@ class slowcontrol():
 		self.latest_P = 0
 		self.latest_T = 0
 		self.latest_T_cam = 0
+  
+		# New Entries, the H_E is short for humidity environment; 
+		# The mode means whether this is scan or the common data taking; 
+		self.latest_H_room = 0 
+		self.latest_P_room = 0 
+		self.latest_T_room = 0 
+		# Maybe we call the mode 0 as scan and mode 1 as fixed; 
+		self.latest_mode = 1
+		self.latest_block_number=0
 
 		#Fundamental parameters;
+		
 		# Mode: 'fixed', 'scan'
 		self.mode = mode
-
-		#Fixed mode parameters;
-		self.Vpp_set = 1.8
+		self.Vpp_set = 0
+		self.sp_current_set = 0
 		self.piezo_frequency = 200
 		self.camera_exposure_time = 1e-3
+		self.data_recording_interval = 1
+		
+		#Fixed mode parameters;
+		self.fixed_vpp= 0
+		self.fixed_sp_current = 0
+		
 
 		#Scan Mode parameters;
 		self.scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
-		self.scan_velocity_integration_time=600  #only for scan; how long we stay at each velocity;
-
+		self.block_unit_time= 300
 		self.rtd_voltage_set = 2
-		self.rtd_switch_interval = 10 		
-		self.sp_current_set = 10e-9
-		self.slow_piezo_switch_interval = 500
-		self.data_recording_interval = 2
+		self.rtd_switch_interval = 10 
+		  
 		
-		    
+			
 
 	@property
 	def camera_daq_delay(self):
 		return 0.25 / self.piezo_frequency 
-        
+		
 	@property
 	def camera_trigger_delay(self):
 		return 0.5 / self.piezo_frequency - 0.5*self.camera_exposure_time
@@ -136,28 +154,29 @@ class slowcontrol():
 	def slow_piezo_flip_thread(self): 
 		'''
 		A background thread that will flip the direction of current of the small stage; 
-		  '''
+		'''
 		stop = threading.Event()
 		def run():
-
-			self.sp_current_set = -np.abs(self.sp_current_set) #flip the current to make sure we start with the positive direction;
-
+			nextT = time.monotonic() + self.block_unit_time
+			
+			self.sp_current_set = -np.abs(self.fixed_sp_current) #flip the current to make sure we start with the positive direction;
+		
 			while not stop.is_set():
-				
 				# Handle discharge once per cycle (at negative current)
 				if self.sp_current_set < 0:
 					self.slow_piezo_drive.discharge()
 					time.sleep(0.1)
 					print('discharged')  
-
+		
 				# Flip current direction
 				self.sp_current_set = -self.sp_current_set
 				self.slow_piezo_drive.set_current(self.sp_current_set)
-
+		
 				# Wait for switch interval
-				if stop.wait(self.slow_piezo_switch_interval):
+				if stop.wait(max(0.0, nextT - time.monotonic())):
 					break		
-					
+				nextT = nextT + self.block_unit_time
+				self.latest_block_number = self.latest_block_number +1 
 		threading.Thread(target=run, daemon=True).start()
 		return stop 
 
@@ -166,10 +185,11 @@ class slowcontrol():
 	def velocity_scan_thread(self): 
 		'''
 		A background thread that will change the Vpp_set; 
-	    '''
+		'''
 		# the stop (thread.event) could be used to stop this thread
 		stop = threading.Event()
 		def run():
+			nextT = time.monotonic() + self.block_unit_time
 			n = len(self.scan_vpp_list)
 			i = 0
 			
@@ -179,16 +199,81 @@ class slowcontrol():
 				self.fast_piezo_drive.set_Vpp(self.Vpp_set)
 				
 				# Measure at this velocity
-				if stop.wait(self.scan_velocity_integration_time):
+				if stop.wait(max(0.0, nextT - time.monotonic())):
 					break # Stop signal received - exit immediately
-					
+				nextT = nextT + self.block_unit_time
+				self.latest_block_number = self.latest_block_number +1 
 				# Move to next velocity
 				i = (i + 1) % n
-
+		
 		threading.Thread(target=run, daemon=True).start()
 		return stop 
  
+	def mixed_thread(self): 
+		'''
+		A new background thread that will swithc between the scan mode and the flip thread 
+		'''
+		stop= threading.Event() 
+		def run(): 
+			nextT= time.monotonic() + self.block_unit_time 
+			n_scan_points = len(self.scan_vpp_list)
+			i=0
+			
+			self.Vpp_set = self.fixed_vpp 
+			self.fast_piezo_drive.set_Vpp(self.Vpp_set)
+			self.sp_current_set = -np.abs(self.fixed_sp_current)
+			
+			
+			while not stop.is_set():
+				
+				# Initialization the scan mode; 
+				if datetime.now().hour==0 and datetime.now().minute<30 and self.latest_mode==1: #at midnight do a 1h scan
+					# if it is already the time for the scan; 
+					i = 0
+					self.latest_mode=0
+					self.slow_piezo_drive.discharge()
+					time.sleep(0.1)
+					self.sp_current_set =0 
+					self.slow_piezo_drive.set_current(self.sp_current_set)
+		
+				# Initialize the fixed velocity mode; 
+				if i>=n_scan_points: 
+					# if we have finished the scan , reset the counter and set the mode to 1 ; 
+					i=0 
+					self.latest_mode=1
+					self.fast_piezo_drive.set_Vpp(self.fixed_vpp)
+					self.sp_current_set = -np.abs(self.fixed_sp_current)
+				
+				# The running scanning mode ; 
+				if self.latest_mode==0: 
+					self.Vpp_set = self.scan_vpp_list[i]
+					self.fast_piezo_drive.set_Vpp(self.Vpp_set)
+					i=i+1
+
+		
+				if self.latest_mode==1: 
+					if self.sp_current_set < 0:
+							self.slow_piezo_drive.discharge()
+							time.sleep(0.1)
+							print('discharged')  
+						
+					# Flip current direction
+					self.sp_current_set = -self.sp_current_set
+					self.slow_piezo_drive.set_current(self.sp_current_set)
+		
+				# Wait until the next block of data; 
+				if stop.wait(max(0.0, nextT - time.monotonic())):
+					break # Stop signal received - exit immediately
+				
+				nextT = nextT + self.block_unit_time
+				self.latest_block_number = self.latest_block_number +1 
+		threading.Thread(target=run, daemon=True).start()
+		return stop 
+		
+				
+
  
+# The Poll threads that fetches the dta  
  
 	def rtd_flip_and_poll_thread(self, poll_interval: float = 1, settle_s: float = 0.2):
 		#Replace the RTD_Flip and start_thermo_latest because we want to synchronize the readout. 
@@ -239,7 +324,7 @@ class slowcontrol():
 				# Poll sensor
 				self.latest_T, self.latest_H, self.latest_P = self.yoctopuce.measure()
 				self.latest_T_cam = self.chiller.get_temperature()
-				
+				self.latest_T_room, self.latest_H_room, self.latest_P_room = self.yoctopuce2.measure()
 				# Wait for poll interval
 				if stop.wait(poll_interval):
 					break
@@ -335,16 +420,21 @@ class slowcontrol():
 
 		
 		if self.mode == 'scan': 
+			self.latest_mode = 0 
 			print("[INFO] Configuring scan mode - setting piezo current to 0...")
 			self.sp_current_set = 0e-9
 			self.slow_piezo_drive.set_current(self.sp_current_set)
 			print("[INFO] Starting velocity scan thread...")
 			self.velocity_scan_stopper=self.velocity_scan_thread()
 		if self.mode == 'fixed':
-			self.Vpp_set = 1.8
+			self.latest_mode = 1 
+			self.Vpp_set = self.fixed_vpp
 			self.fast_piezo_drive.set_Vpp(self.Vpp_set)
 			print("[INFO] Configuring fixed mode - starting piezo current flip thread...")
 			self.slow_piezo_flip_stopper = self.slow_piezo_flip_thread()
+		if self.mode == 'mixed' : 
+			self.latest_mode=1  #default fixed mode first
+			self.mixed_stopper=self.mixed_thread()
 		
 		print("[INFO] All instruments and threads started successfully!")
 	
@@ -376,29 +466,40 @@ class slowcontrol():
 			P		= getattr(self, 'latest_P', -1)
 			T		= getattr(self, 'latest_T', -1)
 			T_cam	= getattr(self, 'latest_T_cam', -1)
-	
+   
+			# The Second 
+			H_room = getattr(self,'latest_H_room', -1 )
+			P_room = getattr(self,'latest_P_room', -1 )
+			T_room = getattr(self,'latest_T_room', -1 )
+			mode  = getattr(self,'latest_mode', -1 )
+			block_number= getattr(self,'latest_block_number',-1)
 			remain = self.data_recording_interval - (time.time() - t0)
 			
 			print(f"[{ts.isoformat()}]"
-		 	f" rtd_diff={rtd_diff:.4e}  rtd_abs={rtd_abs:.4e}, rtd_voltage_set={rtd_voltage_set:.1f},"
-		 	f" strain_small={sp_strain:.3e}, sp_current={sp_current_set:.1e},"
+			 f" rtd_diff={rtd_diff:.4e}  rtd_abs={rtd_abs:.4e}, rtd_voltage_set={rtd_voltage_set:.1f},"
+			 f" strain_small={sp_strain:.3e}, sp_current={sp_current_set:.1e},"
 			f" Vpp_set={Vpp_set}, f_set {f_set}, A={A:.3e}, phi={phi:.1f}, f={f:.1f},"
-			f" H={H:.1f}, P={P:.2f}, T={T:.2f}, T_cam={T_cam:.2f}")
+			f" H={H:.1f}, P={P:.2f}, T={T:.2f}, T_cam={T_cam:.2f}, H_room={H_room:.1f}, P_room={P_room:.2f}, T_room={T_room:.2f}, mode={mode}, block={block_number}")
 			
 			self.database.insert_snapshot(ts,
 				rtd_diff, rtd_abs, rtd_voltage_set,
 				sp_current_set, sp_strain,
 				Vpp_set, f_set,
-				A, phi, f, H, P, T, T_cam)
+				A, phi, f, H, P, T, T_cam, H_room , P_room , T_room , mode,block_number)
 				
 			if remain > 0:
 				time.sleep(remain)
-		
+	
 
+  
+  
+  
 		
 	def stop(self):
 
 		self.fast_piezo_drive.output_off()
+		self.slow_piezo_drive.set_current(0e-9)
+		
 		self.pulse_generator.close()
 		self.yoctopuce.close()
 		self.chiller.close()
@@ -409,41 +510,53 @@ class slowcontrol():
 		self.fast_piezo_poll_stopper.set()
 		self.environment_poll_stopper.set()
 		
+		
+
 		# Stop the drive; 
 		if self.mode == 'scan': 
 			self.velocity_scan_stopper.set() 
 		if self.mode == 'fixed':
 			self.slow_piezo_flip_stopper.set()
- 
+		if self.mode == 'mixed':
+			self.mixed_stopper.set()
+
 
 
 	############################################################## MAIN RUN ########################################################################
 
 if __name__ == "__main__" :
+	# Very possible that we will stop using this main function; 
 		
+  
+	# Here is just setting the mode from the console; 
 	parser = argparse.ArgumentParser()
 	parser.add_argument(
 		"--mode",
-		default='fixed',
-		choices=['fixed', 'scan'],
+		default='mixed',
+		choices=['fixed', 'scan', 'mixed'],
 		help="Measurement mode: 'fixed' for single velocity, 'scan' for velocity scanning"
 	)
 	args = parser.parse_args()
-
-	#HERE SET PARMAETERS	
 	slow_control = slowcontrol(mode=args.mode)
 
-	slow_control.Vpp_set = 15
-	slow_control.piezo_frequency = 200
-	slow_control.camera_exposure_time = 1.7e-3
+
+
+	slow_control.latest_mode= 1
+	slow_control.block_unit_time=300
 	
-	slow_control.scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
-	slow_control.scan_velocity_integration_time=300
+	slow_control.fixed_vpp = 1.8
+	slow_control.fixed_sp_current= 19.9e-9
+	slow_control.scan_vpp_list = np.linspace(0.001,13.5,12)
+	slow_control.sp_current_set = 19.9e-9 # linti at this resolution, otherwise need to modify control class.
+	
+	slow_control.piezo_frequency = 200
+	slow_control.camera_exposure_time = 1.6e-3
+	
 	slow_control.data_recording_interval = 1
 	slow_control.rtd_switch_interval = 20	
-	slow_control.sp_current_set = 10e-9
-	slow_control.slow_piezo_switch_interval = 500
 
+#slow_control.scan_vpp_list= np.append( np.array((0.001)), np.arange(0.,1,0.3))
+# The scan range of the velocity is from 0.001mm/s to 1 mm/s 
 
 
 	try:
