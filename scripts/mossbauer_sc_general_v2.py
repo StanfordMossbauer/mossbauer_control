@@ -117,13 +117,15 @@ class slowcontrol():
 		# Mode: 'fixed', 'scan'
 		self.mode = mode
 		self.Vpp_set = 0
+		self.sp_current_set = 0
 		self.piezo_frequency = 200
 		self.camera_exposure_time = 1e-3
 		self.data_recording_interval = 1
 		
 		#Fixed mode parameters;
 		self.fixed_vpp= 0
-		self.sp_current_set = 0
+		self.fixed_sp_current = 0
+		
 
 		#Scan Mode parameters;
 		self.scan_vpp_list= np.append( np.array((0.001)), np.arange(0.3,38,0.3))
@@ -157,7 +159,7 @@ class slowcontrol():
 		def run():
 			nextT = time.monotonic() + self.block_unit_time
 			
-			self.sp_current_set = -np.abs(self.sp_current_set) #flip the current to make sure we start with the positive direction;
+			self.sp_current_set = -np.abs(self.fixed_sp_current) #flip the current to make sure we start with the positive direction;
 		
 			while not stop.is_set():
 				# Handle discharge once per cycle (at negative current)
@@ -174,6 +176,7 @@ class slowcontrol():
 				if stop.wait(max(0.0, nextT - time.monotonic())):
 					break		
 				nextT = nextT + self.Slow_switch_interval
+				self.latest_block_number = self.latest_block_number +1 
 		threading.Thread(target=run, daemon=True).start()
 		return stop 
 
@@ -199,6 +202,7 @@ class slowcontrol():
 				if stop.wait(max(0.0, nextT - time.monotonic())):
 					break # Stop signal received - exit immediately
 				nextT = nextT + self.block_unit_time
+				self.latest_block_number = self.latest_block_number +1 
 				# Move to next velocity
 				i = (i + 1) % n
 		
@@ -214,8 +218,10 @@ class slowcontrol():
 			nextT= time.monotonic() + self.block_unit_time 
 			n_scan_points = len(self.scan_vpp_list)
 			i=0
-			self.fast_piezo_drive.set_Vpp(self.fixed_vpp)
-			self.sp_current_set = -np.abs(self.sp_current_set)
+			
+			self.Vpp_set = self.fixed_vpp 
+			self.fast_piezo_drive.set_Vpp(self.Vpp_set)
+			self.sp_current_set = -np.abs(self.fixed_sp_current)
 			
 			
 			while not stop.is_set():
@@ -225,7 +231,8 @@ class slowcontrol():
 					# if it is already the time for the scan; 
 					i = 0
 					self.latest_mode=0
-					self.slow_piezo_drive.set_current(0e-9)
+					self.sp_current_set =0 
+					self.slow_piezo_drive.set_current(self.sp_current_set)
 		
 				# Initialize the fixed velocity mode; 
 				if i>=n_scan_points: 
@@ -233,7 +240,7 @@ class slowcontrol():
 					i=0 
 					self.latest_mode=1
 					self.fast_piezo_drive.set_Vpp(self.fixed_vpp)
-					self.sp_current_set = -np.abs(self.sp_current_set)
+					self.sp_current_set = -np.abs(self.fixed_sp_current)
 				
 				# The running scanning mode ; 
 				if self.latest_mode==0: 
@@ -257,7 +264,7 @@ class slowcontrol():
 					break # Stop signal received - exit immediately
 				
 				nextT = nextT + self.block_unit_time
-				self.latest_block = self.latest_block+ 1 
+				self.latest_block_number = self.latest_block_number +1 
 		threading.Thread(target=run, daemon=True).start()
 		return stop 
 		
@@ -536,6 +543,7 @@ if __name__ == "__main__" :
 	slow_control.block_unit_time=300
 	
 	slow_control.fixed_vpp = 1.8
+	slow_control.fixed_sp_current= 19.9e-9
 	slow_control.scan_vpp_list = np.linspace(0.001,13.5,12)
 	slow_control.sp_current_set = 19.9e-9 # linti at this resolution, otherwise need to modify control class.
 	
