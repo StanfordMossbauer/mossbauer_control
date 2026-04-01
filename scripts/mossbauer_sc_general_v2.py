@@ -398,7 +398,11 @@ class slowcontrol():
 		
 	def stop(self):
 
+
 		self.fast_piezo_drive.output_off()
+		self.slow_piezo_drive.set_current(0e-9)
+
+		#self.fast_piezo_drive.output_off()
 		self.pulse_generator.close()
 		self.yoctopuce.close()
 		self.chiller.close()
