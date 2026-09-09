@@ -45,9 +45,12 @@ class sql_writer:
 		# the new HE, HP, HT , mode; 
 		try:
 			self.conn.ping(reconnect=True, attempts=1, delay=0)
-		except Exception:
-			self.conn.reconnect(attempts=3, delay=1)
-			self.cur = self.conn.cursor()
+		except Exception as e:
+			try:
+				self.conn.reconnect(attempts=3, delay=1)
+				self.cur = self.conn.cursor()
+			except Exception as e:
+				return
 
 		sql = (f"INSERT INTO `{self.table}` "
 			   "(`TIME`,`rtd_diff`,`rtd_abs`,`rtd_voltage_set`,`sp_current_set`,`sp_strain`,`Vpp_set`, `f_set`, `A`, `phi`, `f`, `H`, `P`, `T`, `T_cam`, `H_room`, `P_room` , `T_room`, `mode`,`block_number`) "
@@ -227,7 +230,7 @@ class slowcontrol():
 			while not stop.is_set():
 				
 				# Initialization the scan mode; 
-				if datetime.now().hour==0 and datetime.now().minute<30 and self.latest_mode==1: #at midnight do a 1h scan
+				if datetime.now().hour==0 and datetime.now().minute<30 and self.latest_mode==1 and self.sp_current_set < 0: #at midnight do a 1h scan
 					# if it is already the time for the scan; 
 					i = 0
 					self.latest_mode=0
@@ -241,6 +244,7 @@ class slowcontrol():
 					# if we have finished the scan , reset the counter and set the mode to 1 ; 
 					i=0 
 					self.latest_mode=1
+					self.Vpp_set = self.fixed_vpp
 					self.fast_piezo_drive.set_Vpp(self.fixed_vpp)
 					self.sp_current_set = -np.abs(self.fixed_sp_current)
 				
@@ -545,9 +549,9 @@ if __name__ == "__main__" :
 	slow_control.block_unit_time=300
 	
 	slow_control.fixed_vpp = 1.8
-	slow_control.fixed_sp_current= 19.9e-9
+	slow_control.fixed_sp_current= 19e-9
 	slow_control.scan_vpp_list = np.linspace(0.001,13.5,12)
-	slow_control.sp_current_set = 19.9e-9 # linti at this resolution, otherwise need to modify control class.
+	slow_control.sp_current_set = 19e-9 # linti at this resolution, otherwise need to modify control class.
 	
 	slow_control.piezo_frequency = 200
 	slow_control.camera_exposure_time = 1.6e-3
